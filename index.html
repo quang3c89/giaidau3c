@@ -1188,9 +1188,17 @@ document.addEventListener('click', (e) => {
    STORAGE
    ================================================================ */
 function loadState() {
-  // Supabase credentials stored separately — never wiped by state reset
-  const supaUrl = localStorage.getItem('live3c_supaUrl') || '';
-  const supaKey = localStorage.getItem('live3c_supaKey') || '';
+  // Supabase credentials: ưu tiên localStorage, fallback DEFAULT hardcode
+  let supaUrl = localStorage.getItem('live3c_supaUrl') || '';
+  let supaKey = localStorage.getItem('live3c_supaKey') || '';
+
+  // Thiết bị mới chưa có localStorage → dùng DEFAULT
+  if (!supaUrl && DEFAULT_SUPA_URL) supaUrl = DEFAULT_SUPA_URL;
+  if (!supaKey && DEFAULT_SUPA_KEY) supaKey = DEFAULT_SUPA_KEY;
+
+  // Lưu ngay để lần sau không cần fallback nữa
+  if (supaUrl) localStorage.setItem('live3c_supaUrl', supaUrl);
+  if (supaKey) localStorage.setItem('live3c_supaKey', supaKey);
 
   const saved = localStorage.getItem('live3c_v4');
   if (saved) {
@@ -1199,13 +1207,10 @@ function loadState() {
       S = { ...S, ...p };
     } catch(e) {}
   }
-  // Always override with dedicated supa keys (source of truth for all devices)
+
+  // Credentials luôn là source of truth (override bất kỳ giá trị stale trong S)
   if (supaUrl) S.supaUrl = supaUrl;
   if (supaKey) S.supaKey = supaKey;
-
-  // Apply defaults if still empty
-  if (!S.supaUrl && DEFAULT_SUPA_URL) S.supaUrl = DEFAULT_SUPA_URL;
-  if (!S.supaKey && DEFAULT_SUPA_KEY) S.supaKey = DEFAULT_SUPA_KEY;
 
   if (!S.bracket || S.bracket.length === 0) S.bracket = genBracket(S.bracketSize);
   if (!S.tbVals || S.tbVals.length < 6) S.tbVals = [...DEFAULTS.tbVals];
@@ -1814,6 +1819,7 @@ function renderPlayers() {
    WHEEL — Canvas with smooth easing
    ================================================================ */
 let wheelAnim = null;
+let flyLock = false; // Ngăn 2 flyPlayer chạy đồng thời
 
 function drawWheel(rotation = 0) {
   const canvas = document.getElementById('wheel-canvas');
@@ -1948,9 +1954,10 @@ function showSpinPopup(player) {
 function closeSpinPopup() {
   document.getElementById('spin-popup').classList.remove('show');
   if (pendingSpinPlayer && pendingSpinSlot) {
-    flyPlayer(pendingSpinPlayer, pendingSpinSlot);
+    const p = pendingSpinPlayer, sl = pendingSpinSlot;
     pendingSpinPlayer = null;
     pendingSpinSlot = null;
+    flyPlayer(p, sl, false);
   } else {
     resetWheel();
   }
@@ -1959,9 +1966,10 @@ function closeSpinPopup() {
 function closeSpinPopupAndSpin() {
   document.getElementById('spin-popup').classList.remove('show');
   if (pendingSpinPlayer && pendingSpinSlot) {
-    flyPlayer(pendingSpinPlayer, pendingSpinSlot, true);
+    const p = pendingSpinPlayer, sl = pendingSpinSlot;
     pendingSpinPlayer = null;
     pendingSpinSlot = null;
+    flyPlayer(p, sl, true); // spinAgain=true → sau khi bay xong sẽ tự spin
   } else {
     resetWheel();
   }
@@ -1977,9 +1985,26 @@ function findNextSlot() {
 }
 
 function flyPlayer(player, slot, spinAgain = false) {
+  // Ngăn race condition: nếu đang có flyPlayer khác chạy thì bỏ qua
+  if (flyLock) return;
+  flyLock = true;
+
   const canvas = document.getElementById('wheel-canvas');
   const te = document.getElementById(`match-${slot.r}-${slot.m}-${slot.pKey}`);
-  if (!te) { commitPlayer(player, slot); if (spinAgain) setTimeout(spinWheel, 400); else resetWheel(); return; }
+
+  if (!te) {
+    // Không tìm được DOM target → commit ngay, không cần bay
+    commitPlayer(player, slot);
+    flyLock = false;
+    if (spinAgain) {
+      S.isSpinning = false;
+      document.getElementById('spin-btn').disabled = false;
+      setTimeout(spinWheel, 400);
+    } else {
+      resetWheel();
+    }
+    return;
+  }
 
   const wR = canvas.getBoundingClientRect();
   const tR = te.getBoundingClientRect();
@@ -2004,7 +2029,6 @@ function flyPlayer(player, slot, spinAgain = false) {
   fly.getBoundingClientRect();
 
   requestAnimationFrame(() => {
-    // Re-enable transitions
     fly.style.transition = '';
     requestAnimationFrame(() => {
       fly.style.left   = tR.left + 'px';
@@ -2015,15 +2039,26 @@ function flyPlayer(player, slot, spinAgain = false) {
     });
   });
 
-  // After animation lands, fade out, then commit
+  // Fade out
   setTimeout(() => { fly.style.opacity = '0'; }, 950);
+
+  // Sau khi animation xong: commit, rồi mới cho phép spin tiếp
   setTimeout(() => {
     fly.remove();
     commitPlayer(player, slot);
     const mb = document.getElementById(`mb-${slot.r}-${slot.m}`);
     if (mb) { mb.classList.remove('anim-enter'); void mb.offsetWidth; mb.classList.add('anim-enter'); }
-    if (spinAgain) setTimeout(spinWheel, 400);
-    else resetWheel();
+
+    flyLock = false; // Mở khóa
+
+    if (spinAgain) {
+      // Reset isSpinning TRƯỚC KHI gọi spinWheel để tránh bị guard chặn
+      S.isSpinning = false;
+      document.getElementById('spin-btn').disabled = false;
+      setTimeout(spinWheel, 400);
+    } else {
+      resetWheel();
+    }
   }, 1300);
 }
 
