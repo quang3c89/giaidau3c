@@ -2875,7 +2875,7 @@ function checkBracketTabVisibility() {
   const tabBar = document.getElementById('bracket-tab-bar');
   if (!tabBar) return;
   const r0 = S.bracket && S.bracket[0];
-  const hasDrawn = r0 && r0.some(m => m.p1 || m.p2);
+  const hasDrawn = r0 && r0.length > 0;
   if (hasDrawn) {
     tabBar.classList.add('visible');
   } else {
