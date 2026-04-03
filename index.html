@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live3C Tournament Manager</title>
+<title>Live3C.XYZ QUẢN LÍ GIẢI ĐẤU</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Anton&family=Rajdhani:wght@500;600;700&family=Teko:wght@400;500;600;700&family=Black+Han+Sans&family=Rowdies:wght@400;700&family=Baloo+2:wght@700;800&family=Nunito:wght@700;800;900&family=Be+Vietnam+Pro:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
   --bg: #0d1117;
@@ -22,6 +22,7 @@
   --font-mono: 'JetBrains Mono', monospace;
   --tb-bg: #0d1117;
   --tb-font: 'DM Sans', sans-serif;
+  --title-font: 'Barlow Condensed', sans-serif;
   --name-color: #e6edf3;
   --unit-color: #8b949e;
   --rank-color: #f0a500;
@@ -32,7 +33,6 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
@@ -100,6 +100,40 @@ body {
   50% { box-shadow: 0 0 0 4px rgba(34,197,94,0); }
 }
 
+/* ============ HIDDEN ADMIN BUTTON ============ */
+#admin-trigger {
+  position: fixed; top: 0; right: 0; width: 28px; height: 28px; z-index: 5000;
+  cursor: pointer; opacity: 0; transition: opacity 0.3s;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none;
+}
+#admin-trigger:hover { opacity: 1; }
+#admin-trigger-inner {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(240,165,0,0.6); border: 1px solid rgba(240,165,0,0.8);
+  font-size: 9px; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 8px rgba(240,165,0,0.4);
+}
+
+/* ============ ADMIN LOGIN POPUP ============ */
+#admin-login-popup {
+  display: none; position: fixed; top: 32px; right: 8px; z-index: 5001;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; min-width: 240px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  animation: popupIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+#admin-login-popup.show { display: flex; flex-direction: column; gap: 10px; }
+@keyframes popupIn { from { opacity:0; transform: scale(0.9) translateY(-8px); } to { opacity:1; transform: none; } }
+#admin-login-popup h4 { font-size: 13px; font-weight: 800; font-family: var(--font-display); letter-spacing: 0.3px; }
+#admin-login-popup input {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+  background: rgba(255,255,255,0.05); color: var(--text); outline: none; font-family: inherit;
+  font-size: 13px; transition: border-color 0.15s;
+}
+#admin-login-popup input:focus { border-color: var(--accent); }
+#admin-login-popup .popup-actions { display: flex; gap: 6px; }
+
 /* ============ THEME STRIP ============ */
 .theme-strip {
   display: flex; gap: 5px; padding: 5px 14px;
@@ -122,6 +156,8 @@ body {
   border-color: var(--accent); transform: scale(1.25);
   box-shadow: 0 0 0 2px var(--accent), 0 0 12px var(--glow);
 }
+/* Show theme strip only in admin mode */
+body.viewer-mode .theme-strip { display: none; }
 .strip-spacer { flex: 1; }
 .gear-btn {
   width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border);
@@ -142,16 +178,20 @@ body {
   display: flex; align-items: center; gap: 6px;
   padding: 0 14px; font-size: 12px; white-space: nowrap;
   border-right: 1px solid var(--border); position: relative;
-  transition: background 0.15s;
+  transition: background 0.15s; color: var(--text);
 }
 .tvi:hover { background: rgba(255,255,255,0.03); }
 .tvi .tvi-icon { font-size: 11px; opacity: 0.6; flex-shrink: 0; }
 .tvi [contenteditable] {
   background: none; border: none; outline: none; color: var(--text);
-  font: inherit; cursor: text; min-width: 40px; white-space: nowrap;
+  font: inherit; cursor: default; min-width: 40px; white-space: nowrap;
   caret-color: var(--accent);
 }
-.tvi:first-child [contenteditable] { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; font-family: var(--font-display); }
+body.admin-mode .tvi [contenteditable] { cursor: text; }
+.tvi:first-child [contenteditable] {
+  font-size: 14px; font-weight: 800; letter-spacing: -0.3px;
+  font-family: var(--title-font);
+}
 .tvi:nth-child(2) [contenteditable] { font-size: 11px; opacity: 0.75; }
 .tvi:nth-child(3) [contenteditable] { font-size: 11px; }
 .tvi:nth-child(4) [contenteditable] { font-weight: 700; text-transform: uppercase; color: var(--accent); font-size: 11px; }
@@ -159,6 +199,8 @@ body {
 .tb-actions {
   margin-left: auto; display: flex; gap: 6px; align-items: center; padding: 0 10px; flex-shrink: 0;
 }
+/* Only show admin toolbar actions in admin mode */
+body.viewer-mode .tb-actions { display: none; }
 .tb-actions input[type="color"] {
   width: 20px; height: 20px; border: 1px solid var(--border);
   border-radius: 4px; cursor: pointer; background: transparent;
@@ -170,7 +212,7 @@ body {
 .tb-sync-status {
   display: flex; align-items: center; gap: 5px;
   font-size: 9px; font-family: var(--font-mono); opacity: 0.5; padding: 0 8px;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--border); color: var(--text);
 }
 
 /* ============ MAIN LAYOUT ============ */
@@ -183,6 +225,11 @@ body {
   padding: 8px 10px; overflow-y: auto; border-right: 1px solid var(--border);
   background: rgba(0,0,0,0.15);
 }
+/* Hide edit controls in viewer mode */
+body.viewer-mode .ctrl-row { display: none; }
+body.viewer-mode .pc .dx { display: none !important; }
+body.viewer-mode .hb-ctrl-btn { display: none !important; }
+body.viewer-mode .gear-btn { display: none !important; }
 
 /* ============ HEADER BANNER ============ */
 .header-banner {
@@ -203,7 +250,6 @@ body {
   background: linear-gradient(to right, transparent 60%, var(--card));
   pointer-events: none;
 }
-/* Header controls - hover reveal */
 .header-controls-wrap {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   opacity: 0; transition: opacity 0.5s ease; z-index: 10;
@@ -258,6 +304,8 @@ body {
 .spin-btn:hover { transform: translate(-50%, -50%) scale(1.08); box-shadow: 0 6px 24px rgba(240,165,0,0.6), 0 0 0 6px rgba(0,0,0,0.3); }
 .spin-btn:active { transform: translate(-50%, -50%) scale(0.94); }
 .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: translate(-50%, -50%) scale(1); }
+/* Hide spin button in viewer mode */
+body.viewer-mode .spin-btn { display: none; }
 .wheel-ptr {
   position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
   font-size: 22px; color: var(--accent); z-index: 20;
@@ -316,47 +364,70 @@ body {
 .bracket-side.left-side { flex-direction: row; }
 .bracket-side.right-side { flex-direction: row-reverse; }
 .bracket-center { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 20px; gap: 10px; }
-.round-col { display: flex; flex-direction: column; justify-content: space-around; width: 160px; gap: 10px; padding: 0 10px; }
+
+.round-col {
+  display: flex; flex-direction: column; justify-content: space-around;
+  width: 168px; gap: 10px; padding: 0 6px;
+  position: relative;
+}
 .round-label {
   text-align: center; font-size: 9px; font-weight: 800; text-transform: uppercase;
   opacity: 0.35; margin-bottom: 4px; font-family: var(--font-mono); letter-spacing: 1.5px;
 }
+
+/* Match box */
 .mb {
   background: var(--card); border-radius: 8px; border: 1px solid var(--border);
   display: flex; flex-direction: column; transition: all 0.2s; overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3); position: relative;
 }
 .mb:hover { border-color: rgba(240,165,0,0.4); transform: scale(1.02); z-index: 5; box-shadow: 0 4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(240,165,0,0.2); }
-.mp {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 8px; cursor: pointer; transition: background 0.15s;
-  position: relative; overflow: hidden;
+.mb.anim-enter { animation: matchEnter 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes matchEnter {
+  from { opacity:0; transform: scale(0.8) translateY(-10px); }
+  to { opacity:1; transform: none; }
 }
-.mp::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: transparent; transition: background 0.2s; }
+
+/* Player slot inside match */
+.mp {
+  display: flex; align-items: center;
+  padding: 5px 8px; cursor: pointer; transition: background 0.15s;
+  position: relative; overflow: hidden; gap: 4px;
+}
+.mp::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: transparent; transition: background 0.2s; }
 .mp.p1-slot::before { background: #3b82f6; }
 .mp.p2-slot::before { background: #ef4444; }
 .mp:first-child { border-bottom: 1px solid var(--border); }
 .mp:hover { background: rgba(255,255,255,0.04); }
-.mp.winner { font-weight: 800; background: rgba(240,165,0,0.08); border-left: none; }
+.mp.winner { font-weight: 800; background: rgba(240,165,0,0.08); }
 .mp.winner::before { background: var(--accent) !important; }
 .mp.winner .mn { color: var(--accent); }
 .mp.winner::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to right, rgba(240,165,0,0.05), transparent);
+  background: linear-gradient(to right, rgba(240,165,0,0.07), transparent);
 }
-.mn { font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; font-weight: 500; }
+/* Disable click in viewer mode */
+body.viewer-mode .mp { cursor: default; }
+body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
+
+.mp-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.mp-top { display: flex; align-items: center; gap: 4px; }
+.mn { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; font-weight: 600; flex: 1; }
+.mp-rank { font-size: 8px; background: var(--rank-color); color: #000; padding: 0 3px; border-radius: 2px; font-weight: 800; white-space: nowrap; font-family: var(--font-mono); flex-shrink: 0; }
+.mp-unit { font-size: 8.5px; color: var(--unit-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; line-height: 1.2; }
 .ms {
   width: 28px; border: 1px solid var(--border); border-radius: 4px;
   background: rgba(255,255,255,0.05); color: inherit; padding: 1px;
   text-align: center; font-weight: 800; font-family: var(--font-mono);
-  font-size: 11px; outline: none; z-index: 10; color: var(--accent); transition: border-color 0.15s;
+  font-size: 11px; outline: none; color: var(--accent); transition: border-color 0.15s;
+  flex-shrink: 0;
 }
 .ms:focus { border-color: var(--accent); background: rgba(240,165,0,0.1); }
 
 /* Finals special styling */
-.finals-match { min-width: 180px; }
-.finals-match .mp { padding: 10px 12px; }
-.finals-match .mn { font-size: 14px; font-weight: 800; font-family: var(--font-display); letter-spacing: 0.5px; }
+.finals-match { min-width: 186px; }
+.finals-match .mp { padding: 9px 10px; }
+.finals-match .mn { font-size: 13px; font-weight: 800; font-family: var(--font-display); letter-spacing: 0.5px; }
 .finals-match.has-winner { box-shadow: 0 0 30px rgba(240,165,0,0.3), 0 0 60px rgba(240,165,0,0.1); border-color: rgba(240,165,0,0.5); }
 .champion-label {
   font-family: var(--font-display); font-size: 10px; font-weight: 800; letter-spacing: 2px;
@@ -405,6 +476,65 @@ body {
 .ot-row .ot-name { font-weight: 700; color: var(--name-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ot-row .ot-unit { color: var(--unit-color); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ot-row .ot-rank { font-size: 8px; text-align: center; color: var(--rank-color); font-weight: 800; font-family: var(--font-mono); }
+
+/* ============ SPIN RESULT POPUP ============ */
+#spin-popup {
+  display: none; position: fixed; inset: 0; z-index: 7000;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(10px);
+  align-items: center; justify-content: center;
+}
+#spin-popup.show { display: flex; }
+.spin-popup-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 30px 36px; text-align: center;
+  max-width: 340px; width: 90%;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
+  animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative; overflow: hidden;
+}
+.spin-popup-box::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(240,165,0,0.12) 0%, transparent 60%);
+}
+.spin-popup-confetti {
+  font-size: 32px; animation: confettiBounce 0.6s ease-in-out infinite alternate;
+}
+@keyframes confettiBounce { from { transform: scale(1); } to { transform: scale(1.15); } }
+.spin-popup-label {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  opacity: 0.4; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 8px;
+}
+.spin-popup-name {
+  font-family: var(--font-display); font-size: 32px; font-weight: 900;
+  color: var(--accent); margin: 6px 0 2px;
+  text-shadow: 0 0 30px rgba(240,165,0,0.4);
+  letter-spacing: -0.5px; line-height: 1.1;
+}
+.spin-popup-unit {
+  font-size: 12px; color: var(--unit-color); font-style: italic;
+}
+.spin-popup-rank {
+  display: inline-block; font-size: 11px; background: var(--rank-color);
+  color: #000; padding: 2px 8px; border-radius: 4px; font-weight: 800;
+  font-family: var(--font-mono); margin-top: 6px;
+}
+.spin-popup-actions {
+  display: flex; gap: 10px; margin-top: 20px; justify-content: center;
+}
+.spin-popup-actions button {
+  padding: 9px 20px; border-radius: 8px; font-weight: 700; font-family: inherit;
+  font-size: 13px; cursor: pointer; transition: all 0.15s;
+  border: 1px solid var(--border);
+}
+.spin-popup-actions .btn-close { background: rgba(255,255,255,0.06); color: var(--text); }
+.spin-popup-actions .btn-close:hover { background: rgba(255,255,255,0.12); }
+.spin-popup-actions .btn-continue {
+  background: linear-gradient(135deg, rgba(240,165,0,0.2), rgba(224,90,43,0.2));
+  border-color: var(--accent); color: var(--accent);
+}
+.spin-popup-actions .btn-continue:hover {
+  background: linear-gradient(135deg, rgba(240,165,0,0.35), rgba(224,90,43,0.35));
+}
 
 /* ============ FLYING ANIMATION ============ */
 .flying-player {
@@ -463,24 +593,6 @@ body {
 .sep { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 .field-group { display: flex; flex-direction: column; gap: 5px; }
 
-/* Admin lock */
-.admin-lock {
-  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: #0d1117; z-index: 2000; align-items: center; justify-content: center;
-}
-.admin-lock .lock-box { text-align: center; display: flex; flex-direction: column; gap: 16px; align-items: center; }
-.admin-lock .lock-box h1 { font-size: 36px; font-weight: 900; font-family: var(--font-display); }
-.admin-lock .lock-box input {
-  padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px;
-  width: 260px; text-align: center; font-size: 16px;
-  background: var(--card); outline: none; color: var(--text);
-  transition: border-color 0.15s;
-}
-.admin-lock .lock-box input:focus { border-color: var(--accent); }
-
-/* ============ THEMES ============ */
-/* 5 existing + 5 new sport themes defined in JS */
-
 /* ============ CLOUD SYNC INFO ============ */
 .supa-guide {
   font-size: 10px; opacity: 0.55; background: rgba(255,255,255,0.03);
@@ -499,6 +611,9 @@ body {
   width: 0%; transition: width 0.3s ease; box-shadow: 0 0 8px var(--accent);
 }
 
+/* Font preview in dropdown */
+.font-preview { margin-top: 6px; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: 6px; font-size: 18px; font-weight: 800; text-align: center; color: var(--accent); transition: font-family 0.2s; }
+
 /* ============ RESPONSIVE ============ */
 @media (max-width: 900px) {
   .right { display: none; }
@@ -506,7 +621,7 @@ body {
 }
 </style>
 </head>
-<body>
+<body class="viewer-mode">
 
 <!-- SYNC PROGRESS -->
 <div class="sync-progress" id="sync-progress"><div class="sync-progress-bar" id="sync-bar"></div></div>
@@ -521,18 +636,38 @@ body {
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<!-- ADMIN LOGIN -->
-<div class="admin-lock" id="admin-lock">
-  <div class="lock-box">
-    <div style="font-family:'Barlow Condensed',sans-serif;font-size:48px;font-weight:900;background:linear-gradient(135deg,#f0a500,#e05a2b);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">live3c</div>
-    <h1>🔐 Admin Login</h1>
-    <input type="password" id="admin-pw" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="mbtn pri" onclick="doLogin()" style="width:260px;padding:12px;font-size:15px;">LOGIN</button>
-    <p style="font-size:11px;opacity:0.35;font-family:'JetBrains Mono',monospace;">default: admin</p>
+<!-- HIDDEN ADMIN TRIGGER (top-right corner, hover to reveal) -->
+<button id="admin-trigger" onclick="toggleAdminPopup()" title="">
+  <div id="admin-trigger-inner">⚙</div>
+</button>
+
+<!-- ADMIN LOGIN POPUP -->
+<div id="admin-login-popup">
+  <h4>🔐 Admin</h4>
+  <input type="password" id="admin-pw-popup" placeholder="Mật khẩu" autocomplete="off"
+    onkeydown="if(event.key==='Enter')doLoginPopup()">
+  <div class="popup-actions">
+    <button class="mbtn pri" onclick="doLoginPopup()" style="flex:1;padding:7px;">Đăng nhập</button>
+    <button class="mbtn" onclick="closeAdminPopup()" style="padding:7px 12px;">✕</button>
   </div>
 </div>
 
-<!-- THEME STRIP -->
+<!-- SPIN RESULT POPUP -->
+<div id="spin-popup">
+  <div class="spin-popup-box">
+    <div class="spin-popup-confetti" id="popup-emoji">🎉</div>
+    <div class="spin-popup-label">Chúc mừng</div>
+    <div class="spin-popup-name" id="popup-name">—</div>
+    <div class="spin-popup-unit" id="popup-unit"></div>
+    <div id="popup-rank-wrap"></div>
+    <div class="spin-popup-actions">
+      <button class="btn-close" onclick="closeSpinPopup()">Đóng</button>
+      <button class="btn-continue" onclick="closeSpinPopupAndSpin()">🎯 Quay tiếp</button>
+    </div>
+  </div>
+</div>
+
+<!-- THEME STRIP (admin only) -->
 <div class="theme-strip" id="theme-strip">
   <span class="label">THEME</span>
   <div id="theme-dots"></div>
@@ -540,25 +675,21 @@ body {
   <div class="rt-indicator" id="rt-indicator"><div class="rt-dot offline" id="rt-dot"></div><span id="rt-label">OFFLINE</span></div>
   <button class="gear-btn" title="Settings" onclick="openModal('settings-modal')" style="margin-left:8px;">⚙️</button>
   <button class="gear-btn" title="Supabase Cloud" onclick="openModal('supa-modal')" style="margin-left:4px;">☁️</button>
-  <button class="gear-btn" title="Logout" onclick="doLogout()" style="margin-left:4px;">🔒</button>
+  <button class="gear-btn" title="Đăng xuất" onclick="doLogout()" style="margin-left:4px;">🔒</button>
 </div>
 
 <!-- TOURNEY BAR -->
 <div class="tourney-bar" id="tourney-bar">
-  <div class="tvi"><span class="tvi-icon">🏆</span><div contenteditable="true" id="tb-v0" spellcheck="false"></div></div>
-  <div class="tvi"><span class="tvi-icon">🕒</span><div contenteditable="true" id="tb-v1" spellcheck="false"></div></div>
-  <div class="tvi"><span class="tvi-icon">📍</span><div contenteditable="true" id="tb-v2" spellcheck="false"></div></div>
-  <div class="tvi"><span class="tvi-icon">⚔️</span><div contenteditable="true" id="tb-v3" spellcheck="false"></div></div>
-  <div class="tvi"><span class="tvi-icon">💰</span><div contenteditable="true" id="tb-v4" spellcheck="false"></div></div>
-  <div class="tvi" id="tb-video-url-wrap" style="display:none"><span class="tvi-icon">🎥</span><div contenteditable="true" id="tb-v5" spellcheck="false" placeholder="Video URL..."></div></div>
+  <div class="tvi"><span class="tvi-icon">🏆</span><div contenteditable="false" id="tb-v0" spellcheck="false"></div></div>
+  <div class="tvi"><span class="tvi-icon">🕒</span><div contenteditable="false" id="tb-v1" spellcheck="false"></div></div>
+  <div class="tvi"><span class="tvi-icon">📍</span><div contenteditable="false" id="tb-v2" spellcheck="false"></div></div>
+  <div class="tvi"><span class="tvi-icon">⚔️</span><div contenteditable="false" id="tb-v3" spellcheck="false"></div></div>
+  <div class="tvi"><span class="tvi-icon">💰</span><div contenteditable="false" id="tb-v4" spellcheck="false"></div></div>
+  <div class="tvi" id="tb-video-url-wrap" style="display:none"><span class="tvi-icon">🎥</span><div contenteditable="false" id="tb-v5" spellcheck="false"></div></div>
   <div class="tb-sync-status" id="tb-sync-status"><span id="tb-sync-time">—</span></div>
   <div class="tb-actions">
-    <input type="color" id="tb-bg-color" title="Bar Background Color">
-    <select id="tb-font">
-      <option value="'DM Sans',sans-serif">DM Sans</option>
-      <option value="'Barlow Condensed',sans-serif">Barlow</option>
-      <option value="'JetBrains Mono',monospace">Mono</option>
-    </select>
+    <input type="color" id="tb-bg-color" title="Màu header">
+    <select id="tb-font" title="Font tiêu đề"></select>
   </div>
 </div>
 
@@ -573,7 +704,6 @@ body {
           <div style="display:flex;gap:5px;">
             <button class="hb-ctrl-btn" onclick="document.getElementById('vid-upload').click()">📹 Video</button>
             <input type="file" id="vid-upload" accept="video/*" style="display:none" onchange="handleVideoUpload(event)">
-            <button class="hb-ctrl-btn" onclick="document.getElementById('tb-bg-color').click()">🎨 Color</button>
           </div>
         </div>
       </div>
@@ -587,11 +717,11 @@ body {
     </div>
 
     <div class="ctrl-row">
-      <button class="cb" title="Add Player" onclick="openModal('add-modal')">➕</button>
-      <button class="cb" title="Set Bracket Size" onclick="openModal('count-modal')">🔢</button>
+      <button class="cb" title="Thêm cơ thủ" onclick="openModal('add-modal')">➕</button>
+      <button class="cb" title="Cài số bracket" onclick="openModal('count-modal')">🔢</button>
       <button class="cb" title="Import Excel" onclick="document.getElementById('import-excel').click()">📥</button>
-      <button class="cb" title="Download Template" onclick="downloadTemplate()">📄</button>
-      <button class="cb" title="Push to Cloud" onclick="supaPushDebounced()">⬆️</button>
+      <button class="cb" title="Tải template" onclick="downloadTemplate()">📄</button>
+      <button class="cb" title="Đẩy lên cloud" onclick="supaPushDebounced()">⬆️</button>
       <input type="file" id="import-excel" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(event)">
     </div>
 
@@ -609,14 +739,14 @@ body {
   <!-- RIGHT: OVERVIEW -->
   <aside class="right" id="right-panel">
     <div class="right-header">
-      <h3>Players</h3>
+      <h3>Danh Sách Đăng Kí</h3>
       <div style="display:flex;gap:4px;">
         <button class="export-btn" onclick="exportImage('right-panel','players')">📸</button>
         <button class="export-btn" onclick="exportImage('center-panel','bracket')">🖼</button>
       </div>
     </div>
     <div class="overview-table" id="overview-table">
-      <div class="ot-head"><span>#</span><span>Name</span><span>Unit</span><span>Rank</span></div>
+      <div class="ot-head"><span>#</span><span>Tên</span><span>Đơn vị</span><span>HH</span></div>
     </div>
   </aside>
 </main>
@@ -624,119 +754,184 @@ body {
 <!-- MODALS -->
 <div id="add-modal" class="modal">
   <div class="modal-c">
-    <h2>➕ Add Player</h2>
-    <div class="field-group"><label>Name *</label><input class="minput" type="text" id="add-name" placeholder="Player Name" autocomplete="off" onkeydown="if(event.key==='Enter')addPlayer()"></div>
-    <div class="field-group"><label>Unit / Club</label><input class="minput" type="text" id="add-unit" placeholder="Unit / Club" autocomplete="off"></div>
-    <div class="field-group"><label>Rank</label>
+    <h2>➕ Thêm cơ thủ</h2>
+    <div class="field-group"><label>Tên *</label><input class="minput" type="text" id="add-name" placeholder="Tên cơ thủ" autocomplete="off" onkeydown="if(event.key==='Enter')addPlayer()"></div>
+    <div class="field-group"><label>Đơn vị / CLB</label><input class="minput" type="text" id="add-unit" placeholder="Đơn vị / CLB" autocomplete="off"></div>
+    <div class="field-group"><label>Phân Hạng</label>
       <select class="mselect" id="add-rank">
-        <option value="">No Rank</option>
+        <option value="">Không có</option>
         <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
       </select>
     </div>
     <div class="mactions">
-      <button class="mbtn pri" onclick="addPlayer()">Save</button>
-      <button class="mbtn" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="mbtn pri" onclick="addPlayer()">Lưu</button>
+      <button class="mbtn" onclick="closeModal('add-modal')">Hủy</button>
     </div>
   </div>
 </div>
 
 <div id="count-modal" class="modal">
   <div class="modal-c">
-    <h2>🔢 Bracket Size</h2>
-    <p style="font-size:11px;opacity:0.5;font-family:'JetBrains Mono',monospace;">Rounds up to nearest power of 2. Resets bracket!</p>
-    <div class="field-group"><label>Player Count</label><input class="minput" type="number" id="bracket-size-input" placeholder="e.g. 16" min="4" autocomplete="off"></div>
+    <h2>🔢 Cỡ Bracket</h2>
+    <p style="font-size:11px;opacity:0.5;font-family:'JetBrains Mono',monospace;">Làm tròn lên số chẵn lũy thừa 2. Sẽ reset bracket!</p>
+    <div class="field-group"><label>Số lượng tay vợt</label><input class="minput" type="number" id="bracket-size-input" placeholder="e.g. 16" min="4" autocomplete="off"></div>
     <div class="mactions">
-      <button class="mbtn pri" onclick="updateBracketSize()">Generate</button>
-      <button class="mbtn" onclick="closeModal('count-modal')">Cancel</button>
+      <button class="mbtn pri" onclick="updateBracketSize()">Tạo bracket</button>
+      <button class="mbtn" onclick="closeModal('count-modal')">Hủy</button>
     </div>
   </div>
 </div>
 
 <div id="settings-modal" class="modal">
   <div class="modal-c">
-    <h2>⚙️ Settings</h2>
+    <h2>⚙️ Cài đặt</h2>
     <hr class="sep">
-    <div class="field-group"><label>Admin Password</label><input class="minput" type="text" id="set-pw" placeholder="Change password"></div>
+    <h3 style="font-size:13px;font-weight:800;font-family:'Barlow Condensed',sans-serif;">🎨 Font tiêu đề giải đấu</h3>
+    <div class="field-group">
+      <label>Chọn font</label>
+      <select class="mselect" id="title-font-select" onchange="previewTitleFont(this.value)"></select>
+      <div class="font-preview" id="font-preview-box">3-Cushion Masters</div>
+    </div>
+    <div class="mactions">
+      <button class="mbtn pri" onclick="applyTitleFont()">Áp dụng font</button>
+    </div>
     <hr class="sep">
     <h3 style="font-size:14px;font-weight:800;font-family:'Barlow Condensed',sans-serif;letter-spacing:-0.3px;">☁️ Supabase</h3>
-    <div class="field-group"><label>Supabase URL</label><input class="minput" type="text" id="supa-url" placeholder="https://xxx.supabase.co"></div>
-    <div class="field-group"><label>Supabase Anon Key</label><input class="minput" type="text" id="supa-key" placeholder="eyJ..."></div>
+    <div class="field-group"><label>Supabase URL</label><input class="minput" type="text" id="supa-url" placeholder="https://xxx.supabase.co" autocomplete="off"></div>
+    <div class="field-group"><label>Supabase Anon Key</label><input class="minput" type="text" id="supa-key" placeholder="eyJ..." autocomplete="off"></div>
     <div class="mactions">
-      <button class="mbtn pri" onclick="saveSettings()">Save</button>
+      <button class="mbtn pri" onclick="saveSettings()">Lưu</button>
       <button class="mbtn" onclick="supaLoad()">🔄 Load</button>
-      <button class="mbtn" onclick="closeModal('settings-modal')">Close</button>
+      <button class="mbtn" onclick="closeModal('settings-modal')">Đóng</button>
     </div>
     <hr class="sep">
     <div class="mactions">
-      <button class="mbtn danger" onclick="if(confirm('Reset ALL local data?')){localStorage.clear();location.reload();}">🗑 Reset All</button>
+      <button class="mbtn danger" onclick="if(confirm('Reset toàn bộ dữ liệu local?')){localStorage.clear();location.reload();}">🗑 Reset All</button>
     </div>
   </div>
 </div>
 
 <div id="supa-modal" class="modal">
   <div class="modal-c">
-    <h2>☁️ Supabase Cloud Sync</h2>
+    <h2>☁️ Cloud Sync</h2>
     <div class="supa-guide">
-      <b>Setup:</b><br>
-      1. supabase.com → Create project<br>
-      2. Settings → API → Copy URL + anon key<br>
-      3. Create tables: <b>players</b> (id serial, name, unit, rank, drawn, bracket_slot jsonb) and <b>tournaments</b> (id serial, name, time, location, content, prize, video_url)<br>
-      4. Enable Realtime on both tables
+      <b>Hướng dẫn:</b><br>
+      1. Vào supabase.com → Tạo project<br>
+      2. Settings → API → Sao chép URL + anon key<br>
+      3. Chạy SQL bên dưới để tạo bảng<br>
+      4. Bật Realtime cho cả 2 bảng
     </div>
     <div class="supa-status-row">
       <div class="rt-dot" id="supa-rt-dot" style="background:#ef4444"></div>
-      <span id="supa-status-txt" style="font-size:11px;font-family:'JetBrains Mono',monospace;opacity:0.6;">Not connected</span>
+      <span id="supa-status-txt" style="font-size:11px;font-family:'JetBrains Mono',monospace;opacity:0.6;">Chưa kết nối</span>
     </div>
-    <div class="field-group"><label>Supabase URL</label><input class="minput" type="text" id="supa-url2" placeholder="https://xxx.supabase.co"></div>
-    <div class="field-group"><label>Supabase Anon Key</label><input class="minput" type="text" id="supa-key2" placeholder="eyJ..."></div>
+    <div class="field-group"><label>Supabase URL</label><input class="minput" type="text" id="supa-url2" placeholder="https://xxx.supabase.co" autocomplete="off"></div>
+    <div class="field-group"><label>Supabase Anon Key</label><input class="minput" type="text" id="supa-key2" placeholder="eyJ..." autocomplete="off"></div>
     <div class="mactions" style="flex-wrap:wrap;">
-      <button class="mbtn pri" onclick="saveSupaConfig()">💾 Save & Connect</button>
+      <button class="mbtn pri" onclick="saveSupaConfig()">💾 Lưu & Kết nối</button>
       <button class="mbtn" onclick="supaLoad()">⬇️ Load</button>
       <button class="mbtn" onclick="supaPush()">⬆️ Push</button>
-      <button class="mbtn" onclick="closeModal('supa-modal')">Close</button>
+      <button class="mbtn" onclick="closeModal('supa-modal')">Đóng</button>
     </div>
   </div>
 </div>
 
 <script>
 /* ================================================================
-   THEMES (5 classic + 5 sport)
+   THEMES — 5 theme rõ nét, sáng hơn
    ================================================================ */
 const THEMES = {
-  /* --- Classic 5 --- */
-  'dark-sport':    { bg:'#0d1117', card:'#161b22', text:'#e6edf3', accent:'#f0a500', accent2:'#e05a2b', sL:'rgba(255,255,255,0.04)', sD:'rgba(0,0,0,0.6)', r:'10px', nc:'#e6edf3', uc:'#8b949e', rc:'#f0a500', tb:'#0d1117', border:'rgba(255,255,255,0.08)' },
-  'soft-sport':    { bg:'#e8edf5', card:'#f0f4fa', text:'#1e293b', accent:'#3b82f6', accent2:'#6366f1', sL:'#fff', sD:'#c4cdd9', r:'14px', nc:'#0f172a', uc:'#64748b', rc:'#ef4444', tb:'#e8edf5', border:'rgba(0,0,0,0.08)' },
-  'minimal':       { bg:'#f5f5f5', card:'#ffffff', text:'#111827', accent:'#18181b', accent2:'#52525b', sL:'#fff', sD:'#d1d5db', r:'8px', nc:'#111827', uc:'#6b7280', rc:'#18181b', tb:'#fff', border:'rgba(0,0,0,0.08)' },
-  'ocean':         { bg:'#0c1a2e', card:'#0f2444', text:'#e0f2fe', accent:'#38bdf8', accent2:'#818cf8', sL:'rgba(255,255,255,0.05)', sD:'rgba(0,0,0,0.5)', r:'14px', nc:'#e0f2fe', uc:'#7dd3fc', rc:'#38bdf8', tb:'#0c1a2e', border:'rgba(56,189,248,0.15)' },
-  'sunset':        { bg:'#1a0a00', card:'#2a1500', text:'#fff7ed', accent:'#f97316', accent2:'#fb923c', sL:'rgba(255,255,255,0.05)', sD:'rgba(0,0,0,0.5)', r:'12px', nc:'#fff7ed', uc:'#fdba74', rc:'#f97316', tb:'#1a0a00', border:'rgba(249,115,22,0.2)' },
-  /* --- 5 NEW SPORT THEMES --- */
-  'neon-stadium':  { bg:'#050510', card:'#0a0a20', text:'#f0f0ff', accent:'#00ffcc', accent2:'#ff00aa', sL:'rgba(0,255,204,0.05)', sD:'rgba(0,0,0,0.8)', r:'10px', nc:'#00ffcc', uc:'#aa88ff', rc:'#ff00aa', tb:'#050510', border:'rgba(0,255,204,0.15)' },
-  'football-pitch':{ bg:'#0a1f0a', card:'#0f2a0f', text:'#e8ffe8', accent:'#22c55e', accent2:'#86efac', sL:'rgba(34,197,94,0.05)', sD:'rgba(0,0,0,0.7)', r:'6px', nc:'#86efac', uc:'#4ade80', rc:'#fbbf24', tb:'#0a1f0a', border:'rgba(34,197,94,0.15)' },
-  'arena-lights':  { bg:'#1a1a1a', card:'#242424', text:'#ffffff', accent:'#ffffff', accent2:'#cccccc', sL:'rgba(255,255,255,0.06)', sD:'rgba(0,0,0,0.7)', r:'4px', nc:'#ffffff', uc:'#aaaaaa', rc:'#ffffff', tb:'#111111', border:'rgba(255,255,255,0.1)' },
-  'esports-energy':{ bg:'#0e0015', card:'#180025', text:'#f0e0ff', accent:'#bf00ff', accent2:'#7700ff', sL:'rgba(191,0,255,0.05)', sD:'rgba(0,0,0,0.8)', r:'8px', nc:'#f0e0ff', uc:'#cc88ff', rc:'#bf00ff', tb:'#0e0015', border:'rgba(191,0,255,0.2)' },
-  'dark-soft':     { bg:'#1a202c', card:'#2d3748', text:'#f7fafc', accent:'#63b3ed', accent2:'#b794f4', sL:'rgba(255,255,255,0.05)', sD:'rgba(0,0,0,0.5)', r:'16px', nc:'#bee3f8', uc:'#90cdf4', rc:'#63b3ed', tb:'#1a202c', border:'rgba(99,179,237,0.15)' },
+  'carbon-gold': {
+    name: 'Carbon Gold',
+    bg:'#0d1117', card:'#161b22', text:'#e6edf3',
+    accent:'#f0a500', accent2:'#e05a2b',
+    sL:'rgba(255,255,255,0.04)', sD:'rgba(0,0,0,0.6)', r:'10px',
+    nc:'#e6edf3', uc:'#8b949e', rc:'#f0a500',
+    tb:'#0d1117', border:'rgba(255,255,255,0.08)',
+    dot1:'#f0a500', dot2:'#0d1117'
+  },
+  'royal-blue': {
+    name: 'Royal Blue',
+    bg:'#eef2ff', card:'#ffffff', text:'#1e1b4b',
+    accent:'#4f46e5', accent2:'#7c3aed',
+    sL:'#fff', sD:'rgba(79,70,229,0.2)', r:'12px',
+    nc:'#1e1b4b', uc:'#6366f1', rc:'#4f46e5',
+    tb:'#4f46e5', border:'rgba(79,70,229,0.15)',
+    dot1:'#4f46e5', dot2:'#eef2ff'
+  },
+  'green-arena': {
+    name: 'Green Arena',
+    bg:'#f0fdf4', card:'#ffffff', text:'#14532d',
+    accent:'#16a34a', accent2:'#15803d',
+    sL:'#fff', sD:'rgba(22,163,74,0.15)', r:'10px',
+    nc:'#14532d', uc:'#4ade80', rc:'#16a34a',
+    tb:'#14532d', border:'rgba(22,163,74,0.2)',
+    dot1:'#16a34a', dot2:'#f0fdf4'
+  },
+  'coral-sport': {
+    name: 'Coral Sport',
+    bg:'#fff5f5', card:'#ffffff', text:'#7f1d1d',
+    accent:'#dc2626', accent2:'#f97316',
+    sL:'#fff', sD:'rgba(220,38,38,0.15)', r:'14px',
+    nc:'#7f1d1d', uc:'#ef4444', rc:'#dc2626',
+    tb:'#dc2626', border:'rgba(220,38,38,0.15)',
+    dot1:'#dc2626', dot2:'#fff5f5'
+  },
+  'midnight-pro': {
+    name: 'Midnight Pro',
+    bg:'#06070d', card:'#0e1017', text:'#cdd4e0',
+    accent:'#38bdf8', accent2:'#818cf8',
+    sL:'rgba(56,189,248,0.04)', sD:'rgba(0,0,0,0.7)', r:'8px',
+    nc:'#e0f2fe', uc:'#7dd3fc', rc:'#38bdf8',
+    tb:'#06070d', border:'rgba(56,189,248,0.12)',
+    dot1:'#38bdf8', dot2:'#06070d'
+  },
 };
+
+/* ================================================================
+   FONT LIST (10 fonts hỗ trợ tiếng Việt)
+   ================================================================ */
+const TITLE_FONTS = [
+  { key: "'Barlow Condensed', sans-serif",  name: 'Barlow Condensed' },
+  { key: "'Bebas Neue', sans-serif",         name: 'Bebas Neue' },
+  { key: "'Oswald', sans-serif",             name: 'Oswald' },
+  { key: "'Anton', sans-serif",              name: 'Anton' },
+  { key: "'Rajdhani', sans-serif",           name: 'Rajdhani' },
+  { key: "'Teko', sans-serif",               name: 'Teko' },
+  { key: "'Black Han Sans', sans-serif",     name: 'Black Han Sans' },
+  { key: "'Rowdies', sans-serif",            name: 'Rowdies' },
+  { key: "'Baloo 2', sans-serif",            name: 'Baloo 2' },
+  { key: "'Nunito', sans-serif",             name: 'Nunito' },
+  { key: "'Be Vietnam Pro', sans-serif",     name: 'Be Vietnam Pro' },
+];
 
 /* ================================================================
    STATE
    ================================================================ */
 const DEFAULTS = {
   size: 16,
-  tbVals: ['3-Cushion Masters', 'Sat, 14:00', 'Club Arena', 'Single Elim.', '$5,000', ''],
+  tbVals: ['3-Cushion Masters', 'Sat, 14:00', 'CLB Arena', 'Single Elim.', '5,000,000đ', ''],
   tbBg: '#0d1117', tbFont: "'DM Sans',sans-serif",
-  theme: 'dark-sport', adminPw: 'admin'
+  titleFont: "'Barlow Condensed', sans-serif",
+  theme: 'carbon-gold'
 };
+
+const ADMIN_PASSWORD = 'quang3c89';
 
 let S = {
   players: [], bracketSize: DEFAULTS.size, bracket: [],
   theme: DEFAULTS.theme, wheelRotation: 0, isSpinning: false,
   tbVals: [...DEFAULTS.tbVals], tbBg: DEFAULTS.tbBg, tbFont: DEFAULTS.tbFont,
-  adminPw: DEFAULTS.adminPw, supaUrl: '', supaKey: '', loggedIn: false
+  titleFont: DEFAULTS.titleFont,
+  supaUrl: '', supaKey: '',
+  isAdmin: false
 };
 
 let realtimeChannel = null;
 let pushDebounceTimer = null;
 let lastSyncTime = null;
+let pendingSpinPlayer = null;
+let pendingSpinSlot = null;
 
 /* ================================================================
    UTILS
@@ -752,10 +947,7 @@ function showToast(msg, type = 'info') {
   if (type === 'success') el.style.borderLeftColor = '#22c55e';
   el.textContent = msg;
   container.appendChild(el);
-  setTimeout(() => {
-    el.classList.add('out');
-    setTimeout(() => el.remove(), 350);
-  }, 3500);
+  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 350); }, 3500);
 }
 
 function setSyncProgress(pct) {
@@ -772,10 +964,10 @@ function updateRTIndicator(online) {
   const stxt = document.getElementById('supa-status-txt');
   if (online) {
     dot.classList.remove('offline'); label.textContent = 'LIVE';
-    sdot.style.background = '#22c55e'; stxt.textContent = 'Connected — Realtime active';
+    sdot.style.background = '#22c55e'; stxt.textContent = 'Kết nối — Realtime active';
   } else {
     dot.classList.add('offline'); label.textContent = 'OFFLINE';
-    sdot.style.background = '#ef4444'; stxt.textContent = 'Not connected';
+    sdot.style.background = '#ef4444'; stxt.textContent = 'Chưa kết nối';
   }
 }
 
@@ -786,31 +978,101 @@ function updateSyncTime() {
 }
 
 /* ================================================================
+   ADMIN MODE
+   ================================================================ */
+function setAdminMode(isAdmin) {
+  S.isAdmin = isAdmin;
+  document.body.classList.toggle('admin-mode', isAdmin);
+  document.body.classList.toggle('viewer-mode', !isAdmin);
+  // Toggle contenteditable on tb fields
+  ['tb-v0','tb-v1','tb-v2','tb-v3','tb-v4','tb-v5'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.contentEditable = isAdmin ? 'true' : 'false';
+  });
+}
+
+function toggleAdminPopup() {
+  const p = document.getElementById('admin-login-popup');
+  if (p.classList.contains('show')) {
+    closeAdminPopup();
+  } else {
+    p.classList.add('show');
+    document.getElementById('admin-pw-popup').focus();
+  }
+}
+
+function closeAdminPopup() {
+  document.getElementById('admin-login-popup').classList.remove('show');
+  document.getElementById('admin-pw-popup').value = '';
+}
+
+function doLoginPopup() {
+  const pw = document.getElementById('admin-pw-popup').value;
+  if (pw === ADMIN_PASSWORD) {
+    setAdminMode(true);
+    saveState();
+    closeAdminPopup();
+    renderThemeDots();
+    showToast('✅ Đã vào chế độ admin', 'success');
+  } else {
+    showToast('❌ Sai mật khẩu', 'error');
+    document.getElementById('admin-pw-popup').value = '';
+  }
+}
+
+function doLogout() {
+  setAdminMode(false);
+  saveState();
+  showToast('🔒 Đã đăng xuất', 'info');
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', (e) => {
+  const popup = document.getElementById('admin-login-popup');
+  const trigger = document.getElementById('admin-trigger');
+  if (popup.classList.contains('show') && !popup.contains(e.target) && !trigger.contains(e.target)) {
+    closeAdminPopup();
+  }
+});
+
+/* ================================================================
    STORAGE
    ================================================================ */
 function loadState() {
-  const saved = localStorage.getItem('live3c_v3');
-  if (saved) { try { const p = JSON.parse(saved); S = { ...S, ...p }; } catch(e){} }
+  const saved = localStorage.getItem('live3c_v4');
+  if (saved) {
+    try {
+      const p = JSON.parse(saved);
+      S = { ...S, ...p };
+    } catch(e) {}
+  }
   if (!S.bracket || S.bracket.length === 0) S.bracket = genBracket(S.bracketSize);
   if (!S.tbVals || S.tbVals.length < 6) S.tbVals = [...DEFAULTS.tbVals];
+  if (!S.titleFont) S.titleFont = DEFAULTS.titleFont;
   loadVideoFromDB();
 }
 
 function saveState() {
   const s = { ...S, wheelRotation: 0, isSpinning: false };
-  try { localStorage.setItem('live3c_v3', JSON.stringify(s)); } catch(e) {
-    try { localStorage.setItem('live3c_v3', JSON.stringify({...s, bracket:[]})); } catch(e2){}
+  try { localStorage.setItem('live3c_v4', JSON.stringify(s)); } catch(e) {
+    try { localStorage.setItem('live3c_v4', JSON.stringify({...s, bracket:[]})); } catch(e2){}
   }
 }
 
 function openVideoDB(cb) {
   const req = indexedDB.open('live3c_media', 2);
-  req.onupgradeneeded = e => { if (!e.target.result.objectStoreNames.contains('videos')) e.target.result.createObjectStore('videos'); };
+  req.onupgradeneeded = e => {
+    if (!e.target.result.objectStoreNames.contains('videos'))
+      e.target.result.createObjectStore('videos');
+  };
   req.onsuccess = e => cb(e.target.result);
   req.onerror = () => cb(null);
 }
 function saveVideoToDB(dataUrl) {
-  openVideoDB(db => { if (!db) return; db.transaction('videos','readwrite').objectStore('videos').put(dataUrl,'brandVideo'); });
+  openVideoDB(db => {
+    if (!db) return;
+    db.transaction('videos','readwrite').objectStore('videos').put(dataUrl,'brandVideo');
+  });
 }
 function loadVideoFromDB() {
   openVideoDB(db => {
@@ -842,18 +1104,25 @@ async function supaFetch(path, method, body, extra) {
 }
 
 async function supaLoad() {
-  if (!S.supaUrl || !S.supaKey) { showToast('⚠️ Configure Supabase first', 'error'); return; }
+  if (!S.supaUrl || !S.supaKey) { showToast('⚠️ Chưa cài Supabase', 'error'); return; }
   setSyncProgress(10);
   try {
     setSyncProgress(30);
-    // Load tournament info
     const tournaments = await supaFetch('tournaments?order=id.desc&limit=1', 'GET');
     if (tournaments && tournaments.length) {
       const t = tournaments[0];
-      S.tbVals = [t.name||'', t.time||'', t.location||'', t.content||'', t.prize||'', t.video_url||''];
+      S.tbVals = [
+        t.name||'', t.time||'', t.location||'',
+        t.content||'', t.prize||'', t.video_url||''
+      ];
+      if (t.bracket_state) {
+        try { S.bracket = JSON.parse(t.bracket_state); } catch(e) {}
+      }
+      if (t.theme) S.theme = t.theme;
+      if (t.title_font) S.titleFont = t.title_font;
+      if (t.bracket_size) S.bracketSize = t.bracket_size;
     }
     setSyncProgress(60);
-    // Load players
     const players = await supaFetch('players?order=id', 'GET');
     if (players && Array.isArray(players)) {
       S.players = players.map(p => normalizePlayer(p));
@@ -862,10 +1131,13 @@ async function supaLoad() {
     saveState();
     updateSyncTime();
     setSyncProgress(100);
-    showToast('✅ Loaded from Supabase', 'success');
+    showToast('✅ Đã tải từ Supabase', 'success');
     closeModal('supa-modal'); closeModal('settings-modal');
     setTimeout(() => setSyncProgress(0), 500);
     setupRealtime();
+    renderAll();
+    applyTheme(S.theme);
+    setupTopBar();
   } catch(err) {
     setSyncProgress(0);
     showToast('❌ ' + err.message, 'error');
@@ -885,39 +1157,40 @@ function normalizePlayer(p) {
 }
 
 async function supaPush() {
-  if (!S.supaUrl || !S.supaKey) { showToast('⚠️ Configure Supabase first', 'error'); return; }
+  if (!S.supaUrl || !S.supaKey) { showToast('⚠️ Chưa cài Supabase', 'error'); return; }
   setSyncProgress(20);
   try {
-    // UPSERT tournament
     const tourney = {
-      name: S.tbVals[0]||'',
-      time: S.tbVals[1]||'',
-      location: S.tbVals[2]||'',
-      content: S.tbVals[3]||'',
-      prize: S.tbVals[4]||'',
-      video_url: S.tbVals[5]||''
+      name:        S.tbVals[0] || '',
+      time:        S.tbVals[1] || '',
+      location:    S.tbVals[2] || '',
+      content:     S.tbVals[3] || '',
+      prize:       S.tbVals[4] || '',
+      video_url:   S.tbVals[5] || '',
+      bracket_state: JSON.stringify(S.bracket),
+      bracket_size:  S.bracketSize,
+      theme:         S.theme,
+      title_font:    S.titleFont
     };
-    await supaFetch('tournaments', 'POST', [tourney], {'Prefer':'return=representation,resolution=merge-duplicates'});
+    await supaFetch('tournaments', 'POST', [tourney]);
     setSyncProgress(50);
-    // UPSERT players (batch)
     if (S.players.length > 0) {
       const pData = S.players.map(p => {
-        const obj = { name: p.name, unit: p.unit, rank: p.rank, drawn: p.drawn, bracket_slot: p.bracketSlot || null };
+        const obj = { name: p.name, unit: p.unit||'', rank: p.rank||'', drawn: p.drawn, bracket_slot: p.bracketSlot || null };
         if (p.supaId) obj.id = p.supaId;
         return obj;
       });
-      // Insert in chunks of 50
       for (let i = 0; i < pData.length; i += 50) {
         await supaFetch('players', 'POST', pData.slice(i, i+50), {'Prefer':'return=representation,resolution=merge-duplicates'});
       }
     }
     setSyncProgress(100);
     updateSyncTime();
-    showToast('✅ Pushed to Supabase', 'success');
+    showToast('✅ Đã đẩy lên Supabase', 'success');
     setTimeout(() => setSyncProgress(0), 500);
   } catch(err) {
     setSyncProgress(0);
-    showToast('❌ Push failed: ' + err.message, 'error');
+    showToast('❌ Push thất bại: ' + err.message, 'error');
   }
 }
 
@@ -927,37 +1200,31 @@ function supaPushDebounced() {
 }
 
 /* ================================================================
-   SUPABASE REALTIME (WebSocket)
+   SUPABASE REALTIME
    ================================================================ */
 function setupRealtime() {
   if (!S.supaUrl || !S.supaKey) return;
   if (realtimeChannel) { try { realtimeChannel.close(); } catch(e){} }
-
-  const wsUrl = S.supaUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+  const wsUrl = S.supaUrl.replace('https://','wss://').replace('http://','ws://');
   const endpoint = `${wsUrl}/realtime/v1/websocket?apikey=${S.supaKey}&vsn=1.0.0`;
-
   try {
     const ws = new WebSocket(endpoint);
     realtimeChannel = ws;
     let heartbeat;
-
     ws.onopen = () => {
       updateRTIndicator(true);
-      // Subscribe to postgres changes
       ws.send(JSON.stringify({
-        topic: 'realtime:public',
-        event: 'phx_join',
+        topic: 'realtime:public', event: 'phx_join',
         payload: { config: { postgres_changes: [
           { event: '*', schema: 'public', table: 'players' },
           { event: '*', schema: 'public', table: 'tournaments' }
-        ]}},
-        ref: '1'
+        ]}}, ref: '1'
       }));
       heartbeat = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));
+        if (ws.readyState === WebSocket.OPEN)
+          ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));
       }, 25000);
     };
-
     ws.onmessage = async (evt) => {
       try {
         const msg = JSON.parse(evt.data);
@@ -969,14 +1236,10 @@ function setupRealtime() {
         }
       } catch(e){}
     };
-
     ws.onclose = () => {
-      clearInterval(heartbeat);
-      updateRTIndicator(false);
-      // Reconnect after 5s
+      clearInterval(heartbeat); updateRTIndicator(false);
       setTimeout(() => { if (S.supaUrl && S.supaKey) setupRealtime(); }, 5000);
     };
-
     ws.onerror = () => { updateRTIndicator(false); };
   } catch(e) { updateRTIndicator(false); }
 }
@@ -995,17 +1258,22 @@ async function supaLoadSilent() {
         S.tbVals = newVals;
         setupTopBar();
       }
+      if (t.bracket_state) {
+        try {
+          const nb = JSON.parse(t.bracket_state);
+          if (JSON.stringify(nb) !== JSON.stringify(S.bracket)) {
+            S.bracket = nb; renderBracket();
+          }
+        } catch(e) {}
+      }
     }
     if (players && Array.isArray(players)) {
       const newPlayers = players.map(p => normalizePlayer(p));
       if (JSON.stringify(newPlayers) !== JSON.stringify(S.players)) {
-        S.players = newPlayers;
-        renderPlayers();
-        drawWheel();
+        S.players = newPlayers; renderPlayers(); drawWheel();
       }
     }
-    saveState();
-    updateSyncTime();
+    saveState(); updateSyncTime();
   } catch(e){}
 }
 
@@ -1015,7 +1283,7 @@ function saveSupaConfig() {
   document.getElementById('supa-url').value = S.supaUrl;
   document.getElementById('supa-key').value = S.supaKey;
   saveState();
-  showToast('☁️ Config saved — connecting...', 'info');
+  showToast('☁️ Đã lưu config — đang kết nối...', 'info');
   supaLoad();
 }
 
@@ -1024,27 +1292,24 @@ function saveSupaConfig() {
    ================================================================ */
 async function init() {
   const loadTxt = document.getElementById('loading-txt');
+
+  loadTxt.textContent = 'ĐỌC DỮ LIỆU...';
   loadState();
 
-  if (!S.loggedIn) {
-    document.getElementById('loading-screen').classList.add('hidden');
-    document.getElementById('admin-lock').style.display = 'flex';
-    return;
-  }
-
-  loadTxt.textContent = 'APPLYING THEME...';
+  loadTxt.textContent = 'ÁP DỤNG THEME...';
   applyTheme(S.theme);
-  renderThemeDots();
+  buildThemeDots();
+  buildFontSelects();
   loadSettingsUI();
 
-  // Try Supabase FIRST
+  // Thử Supabase trước, fallback về local
   if (S.supaUrl && S.supaKey) {
-    loadTxt.textContent = 'SYNCING FROM CLOUD...';
+    loadTxt.textContent = 'ĐỒNG BỘ CLOUD...';
     setSyncProgress(20);
     try {
       await supaLoad();
     } catch(e) {
-      showToast('⚠️ Cloud sync failed — using local data', 'error');
+      showToast('⚠️ Cloud sync thất bại — dùng dữ liệu local', 'error');
     }
   }
 
@@ -1052,7 +1317,10 @@ async function init() {
   renderAll();
 
   setSyncProgress(100);
-  loadTxt.textContent = 'READY';
+  loadTxt.textContent = 'SẴN SÀNG';
+
+  // Apply admin mode nếu đã lưu
+  setAdminMode(S.isAdmin || false);
 
   setTimeout(() => {
     document.getElementById('loading-screen').classList.add('hidden');
@@ -1062,7 +1330,6 @@ async function init() {
   window.addEventListener('resize', () => { drawBracketLines(); });
   setTimeout(drawBracketLines, 300);
 
-  // Setup realtime if configured
   if (S.supaUrl && S.supaKey) setupRealtime();
 }
 
@@ -1073,40 +1340,26 @@ function renderAll() {
 }
 
 /* ================================================================
-   AUTH
-   ================================================================ */
-function doLogin() {
-  const pw = document.getElementById('admin-pw').value;
-  if (pw === S.adminPw) {
-    S.loggedIn = true; saveState();
-    document.getElementById('admin-lock').style.display = 'none';
-    document.getElementById('loading-screen').classList.remove('hidden');
-    document.getElementById('loading-screen').style.opacity = '1';
-    document.getElementById('loading-screen').classList.remove('hidden');
-    setTimeout(init, 200);
-  } else {
-    showToast('❌ Wrong password', 'error');
-    document.getElementById('admin-pw').value = '';
-  }
-}
-function doLogout() { S.loggedIn = false; saveState(); document.getElementById('admin-lock').style.display = 'flex'; }
-
-/* ================================================================
    THEMES
    ================================================================ */
-function renderThemeDots() {
-  const c = document.getElementById('theme-dots'); c.innerHTML = '';
+function buildThemeDots() {
+  const c = document.getElementById('theme-dots');
+  c.innerHTML = '';
   for (const [k, t] of Object.entries(THEMES)) {
     const d = document.createElement('div');
     d.className = 't-dot' + (S.theme === k ? ' active' : '');
-    d.style.background = `linear-gradient(135deg,${t.bg},${t.accent})`;
-    d.title = k.replace(/-/g,' ').toUpperCase();
-    d.onclick = () => { applyTheme(k); renderThemeDots(); };
+    d.style.background = `linear-gradient(135deg,${t.dot1},${t.dot2})`;
+    d.title = t.name;
+    d.onclick = () => { applyTheme(k); buildThemeDots(); };
     c.appendChild(d);
   }
 }
+
+// Keep alias for backward compat
+function renderThemeDots() { buildThemeDots(); }
+
 function applyTheme(key) {
-  const t = THEMES[key] || THEMES['dark-sport'];
+  const t = THEMES[key] || THEMES['carbon-gold'];
   S.theme = key;
   const r = document.documentElement;
   r.style.setProperty('--bg', t.bg);
@@ -1120,13 +1373,71 @@ function applyTheme(key) {
   r.style.setProperty('--name-color', t.nc);
   r.style.setProperty('--unit-color', t.uc);
   r.style.setProperty('--rank-color', t.rc);
-  r.style.setProperty('--tb-bg', t.tb);
+  r.style.setProperty('--tb-bg', S.tbBg || t.tb);
   r.style.setProperty('--border', t.border);
   r.style.setProperty('--glow', t.accent + '33');
-  document.documentElement.style.setProperty('--tb-bg', S.tbBg || t.tb);
+  // Update ot-head background to use --bg
+  document.querySelectorAll('.ot-head').forEach(el => el.style.background = t.bg);
   saveState();
   setTimeout(drawWheel, 50);
   setTimeout(drawBracketLines, 80);
+}
+
+/* ================================================================
+   FONT
+   ================================================================ */
+function buildFontSelects() {
+  // Font selector in settings
+  const sel = document.getElementById('title-font-select');
+  sel.innerHTML = '';
+  TITLE_FONTS.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.key;
+    opt.textContent = f.name;
+    opt.style.fontFamily = f.key;
+    if (f.key === S.titleFont) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // Header bar font select (keep for tb-font)
+  const tfSel = document.getElementById('tb-font');
+  if (tfSel) {
+    tfSel.innerHTML = '';
+    TITLE_FONTS.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.key;
+      opt.textContent = f.name;
+      if (f.key === (S.tbFont || DEFAULTS.tbFont)) opt.selected = true;
+      tfSel.appendChild(opt);
+    });
+  }
+  // Apply current title font
+  document.documentElement.style.setProperty('--title-font', S.titleFont);
+  updateFontPreview(S.titleFont);
+}
+
+function previewTitleFont(val) {
+  updateFontPreview(val);
+}
+
+function updateFontPreview(font) {
+  const box = document.getElementById('font-preview-box');
+  if (box) {
+    box.style.fontFamily = font;
+    box.textContent = document.getElementById('tb-v0') ?
+      (document.getElementById('tb-v0').textContent || '3-Cushion Masters') : '3-Cushion Masters';
+  }
+}
+
+function applyTitleFont() {
+  const val = document.getElementById('title-font-select').value;
+  S.titleFont = val;
+  document.documentElement.style.setProperty('--title-font', val);
+  // Apply only to the title element in tourney bar
+  const titleEl = document.getElementById('tb-v0');
+  if (titleEl) titleEl.style.fontFamily = val;
+  saveState();
+  supaPushDebounced();
+  showToast('✅ Đã đổi font tiêu đề', 'success');
 }
 
 /* ================================================================
@@ -1138,6 +1449,7 @@ function setupTopBar() {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = S.tbVals[i] || DEFAULTS.tbVals[i] || '';
+    if (i === 0) el.style.fontFamily = S.titleFont || DEFAULTS.titleFont;
     el.oninput = () => {
       S.tbVals[i] = el.textContent.trim();
       saveState();
@@ -1145,18 +1457,28 @@ function setupTopBar() {
     };
     el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } };
   });
-  // video URL field visibility
   document.getElementById('tb-video-url-wrap').style.display = S.tbVals[5] ? 'flex' : 'none';
 
   const bgEl = document.getElementById('tb-bg-color');
   bgEl.value = S.tbBg || '#0d1117';
   document.documentElement.style.setProperty('--tb-bg', S.tbBg);
-  bgEl.oninput = e => { S.tbBg = e.target.value; document.documentElement.style.setProperty('--tb-bg', S.tbBg); saveState(); };
+  bgEl.oninput = e => {
+    S.tbBg = e.target.value;
+    // Chỉ đổi --tb-bg, KHÔNG đổi --bg (tránh ảnh hưởng phần khác)
+    document.documentElement.style.setProperty('--tb-bg', S.tbBg);
+    document.getElementById('tourney-bar').style.background = S.tbBg;
+    saveState();
+  };
 
   const fontEl = document.getElementById('tb-font');
-  fontEl.value = S.tbFont || "'DM Sans',sans-serif";
-  document.documentElement.style.setProperty('--tb-font', S.tbFont);
-  fontEl.onchange = e => { S.tbFont = e.target.value; document.documentElement.style.setProperty('--tb-font', S.tbFont); saveState(); };
+  if (fontEl) {
+    fontEl.value = S.tbFont || "'DM Sans',sans-serif";
+    fontEl.onchange = e => {
+      S.tbFont = e.target.value;
+      document.documentElement.style.setProperty('--tb-font', S.tbFont);
+      saveState();
+    };
+  }
 }
 
 function handleVideoUpload(e) {
@@ -1165,7 +1487,7 @@ function handleVideoUpload(e) {
   reader.onload = ev => {
     document.getElementById('header-video').src = ev.target.result;
     saveVideoToDB(ev.target.result);
-    showToast('🎥 Video uploaded', 'success');
+    showToast('🎥 Video đã tải lên', 'success');
   };
   reader.readAsDataURL(file);
 }
@@ -1174,27 +1496,30 @@ function handleVideoUpload(e) {
    SETTINGS
    ================================================================ */
 function loadSettingsUI() {
-  document.getElementById('set-pw').value = S.adminPw;
   document.getElementById('supa-url').value = S.supaUrl || '';
   document.getElementById('supa-key').value = S.supaKey || '';
   document.getElementById('supa-url2').value = S.supaUrl || '';
   document.getElementById('supa-key2').value = S.supaKey || '';
 }
+
 function saveSettings() {
-  const pw = document.getElementById('set-pw').value.trim(); if (pw) S.adminPw = pw;
   S.supaUrl = document.getElementById('supa-url').value.trim();
   S.supaKey = document.getElementById('supa-key').value.trim();
-  saveState(); loadSettingsUI(); closeModal('settings-modal');
-  showToast('✅ Settings saved', 'success');
+  saveState();
+  loadSettingsUI();
+  closeModal('settings-modal');
+  showToast('✅ Đã lưu cài đặt', 'success');
 }
 
 /* ================================================================
    BRACKET DATA
    ================================================================ */
 function genBracket(size) {
-  const rounds = Math.log2(size); const br = [];
+  const rounds = Math.log2(size);
+  const br = [];
   for (let r = 0; r < rounds; r++) {
-    const ms = []; const mc = size / Math.pow(2, r + 1);
+    const ms = [];
+    const mc = size / Math.pow(2, r + 1);
     for (let m = 0; m < mc; m++) ms.push({ p1:null, p2:null, s1:'', s2:'', winner:null });
     br.push(ms);
   }
@@ -1205,11 +1530,14 @@ function genBracket(size) {
    PLAYERS
    ================================================================ */
 function addPlayer() {
-  const n = document.getElementById('add-name').value.trim(); if (!n) return;
+  const n = document.getElementById('add-name').value.trim();
+  if (!n) return;
   S.players.push({
     id: 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
-    name: n, unit: document.getElementById('add-unit').value.trim(),
-    rank: document.getElementById('add-rank').value, drawn: false
+    name: n,
+    unit: document.getElementById('add-unit').value.trim(),
+    rank: document.getElementById('add-rank').value,
+    drawn: false
   });
   document.getElementById('add-name').value = '';
   document.getElementById('add-unit').value = '';
@@ -1220,9 +1548,8 @@ function addPlayer() {
 }
 
 function removePlayer(id) {
-  if (!confirm('Remove player?')) return;
+  if (!confirm('Xóa cơ thủ này?')) return;
   S.players = S.players.filter(p => p.id !== id);
-  // Clean from bracket
   S.bracket.forEach(round => round.forEach(m => {
     if (m.p1 && m.p1.id === id) { m.p1 = null; if (m.winner && m.winner.id === id) m.winner = null; }
     if (m.p2 && m.p2.id === id) { m.p2 = null; if (m.winner && m.winner.id === id) m.winner = null; }
@@ -1241,21 +1568,32 @@ function saveAndRender() {
 function getUndrawn() { return S.players.filter(p => !p.drawn); }
 
 function renderPlayers() {
-  // Left compact list
-  const list = document.getElementById('player-list'); list.innerHTML = '';
+  const list = document.getElementById('player-list');
+  list.innerHTML = '';
   S.players.forEach(p => {
     const c = document.createElement('div');
     c.className = 'pc' + (p.drawn ? ' drawn' : '');
-    c.innerHTML = `<span class="dx" onclick="removePlayer('${p.id}')">✖</span><div class="pr-row"><span class="pn" title="${p.name}">${p.name}</span>${p.rank ? `<span class="pk">${p.rank}</span>` : ''}</div>${p.unit ? `<div class="pu">${p.unit}</div>` : ''}`;
+    c.innerHTML = `
+      <span class="dx" onclick="removePlayer('${p.id}')">✖</span>
+      <div class="pr-row">
+        <span class="pn" title="${p.name}">${p.name}</span>
+        ${p.rank ? `<span class="pk">${p.rank}</span>` : ''}
+      </div>
+      ${p.unit ? `<div class="pu">${p.unit}</div>` : ''}
+    `;
     list.appendChild(c);
   });
-  // Right overview table
   const table = document.getElementById('overview-table');
-  table.innerHTML = '<div class="ot-head"><span>#</span><span>Name</span><span>Unit</span><span>Rank</span></div>';
+  table.innerHTML = '<div class="ot-head"><span>#</span><span>Tên</span><span>Đơn vị</span><span>Hạng</span></div>';
   S.players.forEach((p, i) => {
     const row = document.createElement('div');
     row.className = 'ot-row' + (p.drawn ? ' drawn' : '');
-    row.innerHTML = `<span class="ot-num">${i+1}</span><span class="ot-name" title="${p.name}">${p.name}</span><span class="ot-unit">${p.unit||'-'}</span><span class="ot-rank">${p.rank||'-'}</span>`;
+    row.innerHTML = `
+      <span class="ot-num">${i+1}</span>
+      <span class="ot-name" title="${p.name}">${p.name}</span>
+      <span class="ot-unit">${p.unit||'-'}</span>
+      <span class="ot-rank">${p.rank||'-'}</span>
+    `;
     table.appendChild(row);
   });
 }
@@ -1268,15 +1606,18 @@ let wheelAnim = null;
 function drawWheel(rotation = 0) {
   const canvas = document.getElementById('wheel-canvas');
   const ctx = canvas.getContext('2d');
-  const size = canvas.width; const cx = size/2, cy = size/2, radius = cx - 2;
+  const size = canvas.width;
+  const cx = size/2, cy = size/2, radius = cx - 2;
   ctx.clearRect(0, 0, size, size);
   const undrawn = getUndrawn();
+
   if (undrawn.length === 0) {
     ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI*2);
     ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#161b22';
     ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = 'bold 18px Barlow Condensed, sans-serif'; ctx.fillText('ALL DRAWN', cx, cy);
+    ctx.font = 'bold 18px "Barlow Condensed", sans-serif';
+    ctx.fillText('ALL DRAWN', cx, cy);
     return;
   }
 
@@ -1290,7 +1631,6 @@ function drawWheel(rotation = 0) {
   const slice = (2 * Math.PI) / undrawn.length;
   const rot = (rotation * Math.PI) / 180;
 
-  // Outer glow ring
   const glow = ctx.createRadialGradient(cx,cy,radius*0.85,cx,cy,radius);
   glow.addColorStop(0,'transparent');
   glow.addColorStop(1,'rgba(240,165,0,0.08)');
@@ -1301,24 +1641,21 @@ function drawWheel(rotation = 0) {
     const sa = rot + i * slice;
     const ea = rot + (i+1) * slice;
     const [fill, textFill] = sportColors[i % sportColors.length];
-
     ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, radius, sa, ea);
     ctx.fillStyle = fill; ctx.fill();
     ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.stroke();
-
     ctx.save(); ctx.translate(cx, cy); ctx.rotate(sa + slice / 2);
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     const maxLen = undrawn.length > 20 ? 8 : undrawn.length > 12 ? 12 : 16;
     const name = undrawn[i].name.length > maxLen ? undrawn[i].name.substring(0,maxLen-1)+'…' : undrawn[i].name;
     const fs = undrawn.length > 20 ? 9 : undrawn.length > 12 ? 12 : 15;
-    ctx.font = `800 ${fs}px 'Barlow Condensed', sans-serif`;
+    ctx.font = `800 ${fs}px "Barlow Condensed", sans-serif`;
     ctx.fillStyle = textFill;
     ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 3;
     ctx.fillText(name, radius - 10, 0);
     ctx.restore();
   }
 
-  // Center cap
   ctx.beginPath(); ctx.arc(cx, cy, 28, 0, Math.PI*2);
   const capGrad = ctx.createRadialGradient(cx,cy,0,cx,cy,28);
   capGrad.addColorStop(0,'#2a2a2a'); capGrad.addColorStop(1,'#111');
@@ -1328,10 +1665,11 @@ function drawWheel(rotation = 0) {
 
 function spinWheel() {
   if (S.isSpinning) return;
+  if (!S.isAdmin) return; // Chỉ admin mới spin
   const undrawn = getUndrawn();
-  if (undrawn.length === 0) { showToast('🏁 All players drawn!'); return; }
+  if (undrawn.length === 0) { showToast('🏁 Đã bốc hết!'); return; }
   const slot = findNextSlot();
-  if (!slot) { showToast('🏆 Bracket is full!'); return; }
+  if (!slot) { showToast('🏆 Bracket đã đầy!'); return; }
 
   S.isSpinning = true;
   document.getElementById('spin-btn').disabled = true;
@@ -1339,8 +1677,6 @@ function spinWheel() {
   const ti = Math.floor(Math.random() * undrawn.length);
   const tp = undrawn[ti];
   const sliceDeg = 360 / undrawn.length;
-
-  // Target: put chosen slice at top (270°)
   const targetAngle = 270 - (ti * sliceDeg) - sliceDeg/2 + (Math.random()-0.5) * sliceDeg * 0.6;
   const totalSpins = 5 + Math.random() * 3;
   const totalDeg = totalSpins * 360 + ((targetAngle - S.wheelRotation) % 360 + 360) % 360;
@@ -1362,11 +1698,51 @@ function spinWheel() {
     } else {
       S.wheelRotation = endRot % 360;
       drawWheel(S.wheelRotation);
-      showToast(`🎉 ${tp.name} has been selected!`, 'success');
-      setTimeout(() => flyPlayer(tp, slot), 400);
+      // Hiển thị popup chúc mừng thay vì fly ngay
+      pendingSpinPlayer = tp;
+      pendingSpinSlot = slot;
+      showSpinPopup(tp);
     }
   }
   wheelAnim = requestAnimationFrame(tick);
+}
+
+/* ================================================================
+   SPIN RESULT POPUP
+   ================================================================ */
+function showSpinPopup(player) {
+  document.getElementById('popup-name').textContent = player.name;
+  document.getElementById('popup-unit').textContent = player.unit || '';
+  const rankWrap = document.getElementById('popup-rank-wrap');
+  rankWrap.innerHTML = player.rank ? `<span class="spin-popup-rank">${player.rank}</span>` : '';
+
+  // Random emoji chúc mừng
+  const emojis = ['🎉','🎊','🏆','🎯','⭐','🔥','💥','🎱'];
+  document.getElementById('popup-emoji').textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+  document.getElementById('spin-popup').classList.add('show');
+}
+
+function closeSpinPopup() {
+  document.getElementById('spin-popup').classList.remove('show');
+  if (pendingSpinPlayer && pendingSpinSlot) {
+    flyPlayer(pendingSpinPlayer, pendingSpinSlot);
+    pendingSpinPlayer = null;
+    pendingSpinSlot = null;
+  } else {
+    resetWheel();
+  }
+}
+
+function closeSpinPopupAndSpin() {
+  document.getElementById('spin-popup').classList.remove('show');
+  if (pendingSpinPlayer && pendingSpinSlot) {
+    flyPlayer(pendingSpinPlayer, pendingSpinSlot, true);
+    pendingSpinPlayer = null;
+    pendingSpinSlot = null;
+  } else {
+    resetWheel();
+  }
 }
 
 function findNextSlot() {
@@ -1378,10 +1754,10 @@ function findNextSlot() {
   return null;
 }
 
-function flyPlayer(player, slot) {
+function flyPlayer(player, slot, spinAgain = false) {
   const canvas = document.getElementById('wheel-canvas');
   const te = document.getElementById(`match-${slot.r}-${slot.m}-${slot.pKey}`);
-  if (!te) { resetWheel(player, slot); return; }
+  if (!te) { commitPlayer(player, slot); if (spinAgain) setTimeout(spinWheel, 300); else resetWheel(); return; }
 
   const wR = canvas.getBoundingClientRect();
   const tR = te.getBoundingClientRect();
@@ -1409,14 +1785,23 @@ function flyPlayer(player, slot) {
 
   setTimeout(() => {
     fly.remove();
-    player.drawn = true;
-    S.bracket[slot.r][slot.m][slot.pKey] = { ...player };
-    renderBracket();
-    renderPlayers();
-    saveState();
-    supaPushDebounced();
-    resetWheel();
+    commitPlayer(player, slot);
+    // Animate the match box
+    const mb = document.getElementById(`mb-${slot.r}-${slot.m}`);
+    if (mb) { mb.classList.remove('anim-enter'); void mb.offsetWidth; mb.classList.add('anim-enter'); }
+    if (spinAgain) setTimeout(spinWheel, 300);
+    else resetWheel();
   }, 700);
+}
+
+function commitPlayer(player, slot) {
+  player.drawn = true;
+  S.bracket[slot.r][slot.m][slot.pKey] = { ...player };
+  S.players.forEach(p => { if (p.id === player.id) p.drawn = true; });
+  renderBracket();
+  renderPlayers();
+  saveState();
+  supaPushDebounced();
 }
 
 function resetWheel() {
@@ -1428,8 +1813,10 @@ function resetWheel() {
 }
 
 /* ================================================================
-   BRACKET RENDER — Symmetrical Pro Layout
+   BRACKET RENDER — Symmetrical layout
    ================================================================ */
+const ROUND_NAMES = ['Vòng 1','Vòng 2','Tứ kết','Bán kết','Chung kết','Champion'];
+
 function renderBracket() {
   const container = document.getElementById('bracket-columns');
   container.innerHTML = '';
@@ -1437,15 +1824,18 @@ function renderBracket() {
   if (rounds === 0) return;
 
   if (rounds === 1) {
-    // Single round — just finals
     renderLinearBracket(container);
     setTimeout(drawBracketLines, 60);
     return;
   }
 
-  const midRound = rounds - 1; // Finals index
-  const leftRounds = Math.ceil((rounds - 1) / 2);
-  const rightRounds = Math.floor((rounds - 1) / 2);
+  const midRound = rounds - 1;
+  // Chia đều 2 nhánh: left = ceil((rounds-1)/2), right = floor((rounds-1)/2)
+  // Với 16 người (4 rounds): midRound=3, leftRounds=2 (rounds 0,1), rightRounds=1 (round 2)
+  // Nhưng để cân đối hơn, chúng ta chia: half = floor((rounds-1)/2)
+  const half = Math.floor((rounds - 1) / 2);
+  const leftRounds = half;      // số vòng bên trái
+  const rightRounds = rounds - 1 - half; // số vòng bên phải (= half hoặc half+1)
 
   const leftSide = document.createElement('div');
   leftSide.className = 'bracket-side left-side';
@@ -1456,17 +1846,23 @@ function renderBracket() {
   const rightSide = document.createElement('div');
   rightSide.className = 'bracket-side right-side';
 
-  // LEFT columns (rounds 0 to leftRounds-1)
-  for (let r = 0; r < leftRounds && r < rounds; r++) {
+  // LEFT: rounds 0 .. leftRounds-1
+  for (let r = 0; r < leftRounds; r++) {
     leftSide.appendChild(makeRoundCol(r, rounds, false));
+  }
+
+  // SEMI trái (nếu có, index = leftRounds)
+  if (leftRounds < midRound) {
+    leftSide.appendChild(makeRoundCol(leftRounds, rounds, false));
   }
 
   // FINALS (center)
   const finalsMatch = S.bracket[midRound][0];
   const hasWinner = !!finalsMatch.winner;
+
   const finalsLabel = document.createElement('div');
   finalsLabel.className = 'champion-label';
-  finalsLabel.textContent = '🏆 FINALS';
+  finalsLabel.textContent = '🏆 CHUNG KẾT';
 
   const fBox = document.createElement('div');
   fBox.className = 'mb finals-match' + (hasWinner ? ' has-winner' : '');
@@ -1480,15 +1876,19 @@ function renderBracket() {
   if (hasWinner) {
     const champDiv = document.createElement('div');
     champDiv.style.cssText = 'padding:8px;text-align:center;border-top:1px solid rgba(255,255,255,0.08);';
-    champDiv.innerHTML = `<div style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;opacity:0.5;margin-bottom:2px;">CHAMPION</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;color:var(--accent);text-shadow:0 0 20px var(--accent);">🏆 ${finalsMatch.winner.name}</div>`;
+    champDiv.innerHTML = `
+      <div style="font-family:var(--font-display);font-size:11px;letter-spacing:1px;opacity:0.5;margin-bottom:2px;">VÔ ĐỊCH</div>
+      <div style="font-family:var(--font-display);font-size:18px;font-weight:900;color:var(--accent);text-shadow:0 0 20px var(--accent);">🏆 ${finalsMatch.winner.name}</div>
+    `;
     fBox.appendChild(champDiv);
   }
 
   centerDiv.appendChild(finalsLabel);
   centerDiv.appendChild(fBox);
 
-  // RIGHT columns (rounds leftRounds to rounds-2, displayed in reverse)
-  for (let r = leftRounds; r < midRound; r++) {
+  // RIGHT: rounds midRound-1 down to leftRounds+1+1 (displayed in reverse)
+  const rightStart = leftRounds + 1; // vòng đầu tiên bên phải
+  for (let r = rightStart; r < midRound; r++) {
     rightSide.appendChild(makeRoundCol(r, rounds, true));
   }
 
@@ -1505,8 +1905,6 @@ function renderLinearBracket(container) {
   });
 }
 
-const ROUND_NAMES = ['R1','R2','Quarter','Semi','Final','Champion'];
-
 function makeRoundCol(r, totalRounds, isRight) {
   const col = document.createElement('div');
   col.className = 'round-col';
@@ -1514,14 +1912,16 @@ function makeRoundCol(r, totalRounds, isRight) {
 
   const lbl = document.createElement('div');
   lbl.className = 'round-label';
-  const rIdx = isRight ? (totalRounds - 2 - r + totalRounds - 1) : r;
-  lbl.textContent = r === totalRounds - 1 ? 'FINAL' : r === totalRounds - 2 ? 'SEMI' : ROUND_NAMES[r] || `R${r+1}`;
+  const roundName = r === totalRounds - 1 ? 'CHUNG KẾT'
+    : r === totalRounds - 2 ? 'BÁN KẾT'
+    : r === totalRounds - 3 ? 'TỨ KẾT'
+    : `VÒNG ${r + 1}`;
+  lbl.textContent = roundName;
   col.appendChild(lbl);
 
   S.bracket[r].forEach((m, mi) => {
     const bx = document.createElement('div');
     bx.className = 'mb'; bx.id = `mb-${r}-${mi}`;
-
     const w1 = m.winner && m.p1 && m.winner.id === m.p1.id;
     const w2 = m.winner && m.p2 && m.winner.id === m.p2.id;
     bx.appendChild(makeMatchPlayer(m.p1, m.s1, 'p1', w1, r, mi));
@@ -1537,9 +1937,33 @@ function makeMatchPlayer(player, score, pKey, isWinner, r, mi) {
   el.className = 'mp' + (isWinner ? ' winner' : '') + ' ' + pKey + '-slot';
   el.id = `match-${r}-${mi}-${pKey}`;
 
+  // Inner info div
+  const info = document.createElement('div');
+  info.className = 'mp-info';
+
+  const topRow = document.createElement('div');
+  topRow.className = 'mp-top';
+
   const nameEl = document.createElement('span');
   nameEl.className = 'mn';
-  nameEl.textContent = player ? player.name : '-';
+  nameEl.textContent = player ? player.name : '—';
+  topRow.appendChild(nameEl);
+
+  if (player && player.rank) {
+    const rankEl = document.createElement('span');
+    rankEl.className = 'mp-rank';
+    rankEl.textContent = player.rank;
+    topRow.appendChild(rankEl);
+  }
+
+  info.appendChild(topRow);
+
+  if (player && player.unit) {
+    const unitEl = document.createElement('div');
+    unitEl.className = 'mp-unit';
+    unitEl.textContent = player.unit;
+    info.appendChild(unitEl);
+  }
 
   const scoreEl = document.createElement('input');
   scoreEl.type = 'text'; scoreEl.className = 'ms';
@@ -1547,22 +1971,29 @@ function makeMatchPlayer(player, score, pKey, isWinner, r, mi) {
   scoreEl.onclick = e => e.stopPropagation();
   scoreEl.onchange = e => updateScore(r, mi, pKey, e);
 
-  el.appendChild(nameEl);
+  el.appendChild(info);
   el.appendChild(scoreEl);
-  el.onclick = () => setWinner(r, mi, pKey);
+
+  if (S.isAdmin) {
+    el.onclick = () => setWinner(r, mi, pKey);
+  }
+
   return el;
 }
 
 function updateScore(r, mi, pk, e) {
+  if (!S.isAdmin) return;
   if (pk === 'p1') S.bracket[r][mi].s1 = e.target.value;
   else S.bracket[r][mi].s2 = e.target.value;
   saveState(); supaPushDebounced();
 }
 
 function setWinner(r, mi, pk) {
+  if (!S.isAdmin) return;
   const m = S.bracket[r][mi];
   const w = pk === 'p1' ? m.p1 : m.p2;
-  if (!w) return; m.winner = w;
+  if (!w) return;
+  m.winner = w;
   const nr = r + 1, nm = Math.floor(mi / 2);
   if (nr < S.bracket.length) {
     const np = mi % 2 === 0 ? 'p1' : 'p2';
@@ -1573,7 +2004,7 @@ function setWinner(r, mi, pk) {
 }
 
 /* ================================================================
-   BRACKET LINES — Smooth SVG connectors
+   BRACKET LINES — SVG connectors
    ================================================================ */
 function drawBracketLines() {
   const svg = document.getElementById('bracket-lines');
@@ -1592,19 +2023,21 @@ function drawBracketLines() {
       const e2 = document.getElementById(`mb-${r+1}-${Math.floor(m/2)}`);
       if (!e1 || !e2) continue;
 
-      const r1 = e1.getBoundingClientRect(), r2 = e2.getBoundingClientRect();
+      const r1 = e1.getBoundingClientRect();
+      const r2 = e2.getBoundingClientRect();
       const cr = cont.getBoundingClientRect();
 
-      // Determine direction
-      const x1 = r1.right - cr.left + cont.scrollLeft;
-      const y1 = r1.top + r1.height/2 - cr.top + cont.scrollTop;
-      const x2 = r2.left - cr.left + cont.scrollLeft;
-      const y2 = r2.top + r2.height/2 - cr.top + cont.scrollTop;
+      const x1r = r1.right - cr.left + cont.scrollLeft;
+      const x1l = r1.left  - cr.left + cont.scrollLeft;
+      const y1  = r1.top + r1.height/2 - cr.top + cont.scrollTop;
+      const x2r = r2.right - cr.left + cont.scrollLeft;
+      const x2l = r2.left  - cr.left + cont.scrollLeft;
+      const y2  = r2.top + r2.height/2 - cr.top + cont.scrollTop;
 
-      // Check if right side (reversed)
-      const isRightSide = x1 > x2;
-      const cx1 = isRightSide ? r1.left - cr.left + cont.scrollLeft : x1;
-      const cx2 = isRightSide ? r2.right - cr.left + cont.scrollLeft : x2;
+      // Xác định hướng: nếu e1 bên phải e2 thì đây là right-side bracket
+      const isRightSide = x1l > x2r - 20;
+      const cx1 = isRightSide ? x1l : x1r;
+      const cx2 = isRightSide ? x2r : x2l;
 
       const path = document.createElementNS('http://www.w3.org/2000/svg','path');
       const midX = (cx1 + cx2) / 2;
@@ -1612,8 +2045,8 @@ function drawBracketLines() {
       path.setAttribute('fill','none');
       path.setAttribute('stroke', accent);
       path.setAttribute('stroke-width', S.bracket[r][m].winner ? '2' : '1.5');
-      path.setAttribute('opacity', S.bracket[r][m].winner ? '0.7' : '0.18');
-      path.setAttribute('stroke-dasharray', S.bracket[r][m].winner ? '6' : '4 4');
+      path.setAttribute('opacity', S.bracket[r][m].winner ? '0.7' : '0.15');
+      path.setAttribute('stroke-dasharray', S.bracket[r][m].winner ? '6' : '3 4');
       if (S.bracket[r][m].winner) {
         path.style.animation = 'flowl 1.5s linear infinite';
         path.style.filter = `drop-shadow(0 0 3px ${accent})`;
@@ -1632,10 +2065,13 @@ function updateBracketSize() {
   const sz = Math.pow(2, Math.ceil(Math.log2(raw)));
   document.getElementById('bracket-columns').innerHTML = '';
   document.getElementById('bracket-lines').innerHTML = '';
-  S.bracketSize = sz; S.bracket = genBracket(sz);
+  S.bracketSize = sz;
+  S.bracket = genBracket(sz);
   S.players.forEach(p => p.drawn = false);
-  saveState(); renderAll(); closeModal('count-modal');
-  showToast(`🔢 Bracket set to ${sz} players`, 'info');
+  saveState();
+  renderAll();
+  closeModal('count-modal');
+  showToast(`🔢 Bracket: ${sz} người`, 'info');
 }
 
 /* ================================================================
@@ -1650,21 +2086,29 @@ function handleExcel(e) {
     let added = 0;
     rows.slice(1).forEach(row => {
       if (row[0]) {
-        S.players.push({ id:'p_'+Date.now()+'_'+Math.random().toString(36).substr(2,6), name:String(row[0]), unit:row[1]?String(row[1]):'', rank:row[2]?String(row[2]):'', drawn:false });
+        S.players.push({
+          id: 'p_'+Date.now()+'_'+Math.random().toString(36).substr(2,6),
+          name: String(row[0]),
+          unit: row[1] ? String(row[1]) : '',
+          rank: row[2] ? String(row[2]) : '',
+          drawn: false
+        });
         added++;
       }
     });
     document.getElementById('import-excel').value = '';
-    saveAndRender(); supaPushDebounced();
-    showToast(`✅ Imported ${added} players`, 'success');
+    saveAndRender();
+    supaPushDebounced();
+    showToast(`✅ Đã import ${added} cơ thủ`, 'success');
   };
   reader.readAsArrayBuffer(file);
 }
 
 function downloadTemplate() {
-  const ws = XLSX.utils.aoa_to_sheet([['Name','Unit','Rank'],['John Doe','Club A','A']]);
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Players');
-  XLSX.writeFile(wb,'live3c_template.xlsx');
+  const ws = XLSX.utils.aoa_to_sheet([['Tên','Đơn vị','Hạng'],['Nguyễn Văn A','CLB Arena','A']]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Players');
+  XLSX.writeFile(wb, 'live3c_template.xlsx');
 }
 
 /* ================================================================
@@ -1678,21 +2122,17 @@ function exportImage(elementId, filename) {
   }).then(canvas => {
     const a = document.createElement('a');
     a.download = `live3c_${filename}_${Date.now()}.png`;
-    a.href = canvas.toDataURL('image/png'); a.click();
-  }).catch(err => showToast('❌ Export failed: ' + err.message, 'error'));
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }).catch(err => showToast('❌ Export thất bại: ' + err.message, 'error'));
 }
 
 /* ================================================================
-   BOOT
+   BOOT — Load thẳng, không chặn bởi login
    ================================================================ */
 window.addEventListener('DOMContentLoaded', () => {
-  loadState();
-  if (S.loggedIn) {
-    init();
-  } else {
-    document.getElementById('loading-screen').classList.add('hidden');
-    document.getElementById('admin-lock').style.display = 'flex';
-  }
+  // Luôn khởi động ngay, viewer mode là mặc định
+  init();
 });
 </script>
 </body>
