@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 <title>Live3C Tournament Manager</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -33,10 +33,11 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+/* Thanh cuộn dày hơn */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
 
 body {
   font-family: var(--font-main);
@@ -359,6 +360,29 @@ body.viewer-mode .spin-btn { display: none; }
 #bracket-lines { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; overflow: visible; }
 .bracket-cols { display: flex; gap: 0; z-index: 2; padding: 20px 16px; align-items: stretch; justify-content: center; min-width: 100%; min-height: calc(100vh - 120px); }
 
+/* Nút full màn hình bracket */
+#bracket-fullscreen-btn {
+  position: absolute; top: 10px; right: 10px; z-index: 50;
+  width: 32px; height: 32px; border-radius: 7px;
+  background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+  color: var(--text); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); transition: all 0.15s;
+}
+#bracket-fullscreen-btn:hover { background: rgba(240,165,0,0.2); border-color: var(--accent); }
+
+/* Bracket fullscreen overlay */
+body.bracket-fullscreen .center {
+  position: fixed; inset: 0; z-index: 2000;
+  width: 100vw; height: 100vh;
+  padding: 8px; overflow: auto;
+  background: var(--bg);
+}
+body.bracket-fullscreen #bracket-fullscreen-btn { top: 10px; right: 10px; }
+body.bracket-fullscreen .main > :not(.center) { display: none !important; }
+body.bracket-fullscreen .theme-strip,
+body.bracket-fullscreen .tourney-bar { display: none !important; }
+
 /* SYMMETRICAL BRACKET */
 .bracket-side { display: flex; gap: 0; align-items: stretch; }
 .bracket-side.left-side { flex-direction: row; }
@@ -651,75 +675,124 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 .m-tab:active { background: rgba(255,255,255,0.05); }
 
 @media (max-width: 768px) {
-  body { overflow: auto; height: auto; min-height: 100vh; }
-
+  /* Body scrollable, tab bar ở dưới */
+  body { overflow: auto; height: auto; min-height: 100dvh; }
   .mobile-tabs { display: flex; }
 
   .main {
     flex-direction: column;
     padding-bottom: 54px;
+    overflow: visible;
+    height: auto;
   }
 
+  /* === TAB: CƠ THỦ (left) === */
   .left {
     flex: none; width: 100%; min-width: unset; max-width: unset;
     border-right: none; border-bottom: 1px solid var(--border);
-    max-height: unset; overflow-y: visible;
+    overflow-y: visible; max-height: none;
+    display: none; /* bị ẩn mặc định, switchTab mở */
   }
 
+  /* Wheel nhỏ hơn để thấy danh sách cơ thủ phía dưới */
+  .wheel-wrap {
+    width: 55% !important;
+    margin: 0 auto;
+  }
+
+  /* Header banner compact hơn */
+  .header-banner { max-height: 70px; }
+  .hb-video { min-height: 60px; max-height: 70px; }
+
+  /* Player list: grid 3 cột nhỏ trên mobile */
+  .plist-left {
+    grid-template-columns: 1fr 1fr 1fr;
+    max-height: 45vh;
+    overflow-y: auto;
+  }
+
+  /* === TAB: BRACKET (center) === */
   .center {
-    flex: none; width: 100%; min-height: 70vh;
-    overflow-x: auto; padding: 8px;
+    flex: none; width: 100%;
+    display: none; /* bị ẩn mặc định */
+    overflow: auto;
+    padding: 6px 6px 8px 6px;
+    /* Cho phép scroll ngang để xem toàn bộ bracket */
+    -webkit-overflow-scrolling: touch;
   }
 
+  /* Bracket tối thiểu đủ rộng để hiện toàn bộ */
+  .bracket-cols {
+    min-width: max-content;
+    min-height: calc(100dvh - 160px);
+    padding: 12px 8px;
+  }
+
+  /* === TAB: THÔNG TIN (right) === */
   .right {
-    display: flex !important;
+    display: none !important;
     flex: none; width: 100%; border-left: none;
     border-top: 1px solid var(--border);
   }
 
-  /* Ẩn left và right ban đầu, chỉ show center */
-  .left  { display: none; }
-  .right { display: none !important; }
-
   /* Tourney bar compact */
   .tourney-bar { flex-wrap: wrap; height: auto; min-height: 38px; overflow: visible; }
 
-  /* Theme strip: ẩn bớt dots trên mobile, giữ actions */
+  /* Theme strip */
   .theme-strip .label { display: none; }
 
-  /* Player cards: tăng font size tối thiểu */
-  .pn { font-size: 11px !important; }
-  .pu { font-size: 9px !important; }
+  /* Player cards */
+  .pn { font-size: 10px !important; }
+  .pu { font-size: 8px !important; }
 
-  /* Spin button lớn hơn để dễ tap */
-  .spin-btn { width: 64px !important; height: 64px !important; font-size: 13px !important; }
+  /* Spin button */
+  .spin-btn { width: 52px !important; height: 52px !important; font-size: 11px !important; }
 
-  /* Modal full width trên mobile */
-  .modal-c { min-width: unset; width: calc(100vw - 32px); max-width: unset; }
+  /* Modal full width */
+  .modal-c { min-width: unset; width: calc(100vw - 24px); max-width: unset; }
 
-  /* Bracket: cho phép scroll ngang */
-  .bracket-cols { min-width: max-content; }
-
-  /* Tăng touch target các nút nhỏ */
+  /* Gear buttons */
   .gear-btn { width: 34px; height: 34px; }
   .t-dot { width: 22px; height: 22px; }
+
+  /* Nút fullscreen bracket to hơn trên mobile */
+  #bracket-fullscreen-btn { width: 38px; height: 38px; font-size: 16px; }
 }
 
+/* --- SWITCH TAB VIA BODY CLASS --- */
 @media (max-width: 768px) {
-  /* Khi tab left active */
   body.tab-left .left   { display: flex !important; }
   body.tab-left .center { display: none !important; }
   body.tab-left .right  { display: none !important; }
 
-  /* Khi tab center active */
   body.tab-center .left   { display: none !important; }
   body.tab-center .center { display: flex !important; }
   body.tab-center .right  { display: none !important; }
 
-  /* Khi tab right active */
   body.tab-right .left   { display: none !important; }
   body.tab-right .center { display: none !important; }
   body.tab-right .right  { display: flex !important; }
+}
+
+/* === BRACKET FULLSCREEN trên mobile === */
+@media (max-width: 768px) {
+  body.bracket-fullscreen {
+    overflow: hidden;
+  }
+  body.bracket-fullscreen .center {
+    position: fixed; inset: 0; z-index: 2000;
+    width: 100vw; height: 100dvh;
+    display: flex !important;
+    padding: 6px; overflow: auto;
+    background: var(--bg);
+    /* Landscape: cho phép xoay ngang tự nhiên */
+  }
+  body.bracket-fullscreen .mobile-tabs { display: none !important; }
+  body.bracket-fullscreen .main > .left,
+  body.bracket-fullscreen .main > .right { display: none !important; }
+  body.bracket-fullscreen .theme-strip,
+  body.bracket-fullscreen .tourney-bar { display: none !important; }
+  body.bracket-fullscreen #bracket-fullscreen-btn { top: 8px; right: 8px; }
 }
 </style>
 </head>
@@ -834,6 +907,7 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 
   <!-- CENTER: BRACKET -->
   <section class="center" id="center-panel">
+    <button id="bracket-fullscreen-btn" onclick="toggleBracketFullscreen()" title="Toàn màn hình bracket">⛶</button>
     <div class="bracket-wrap" id="bracket-container">
       <svg id="bracket-lines"></svg>
       <div class="bracket-cols" id="bracket-columns"></div>
@@ -1530,13 +1604,17 @@ async function init() {
   setSyncProgress(100);
   loadTxt.textContent = 'SẴN SÀNG';
 
-  // Apply admin mode nếu đã lưu
-  setAdminMode(S.isAdmin || false);
+  // Apply admin mode — KHÔNG lấy từ S (đã bị reset khi save), luôn false
+  setAdminMode(false);
 
   setTimeout(() => {
     document.getElementById('loading-screen').classList.add('hidden');
     setSyncProgress(0);
-  }, 400);
+    // Cảnh báo nếu chưa có Supabase (thiết bị mới, không có dữ liệu cloud)
+    if (!S.supaUrl || !S.supaKey) {
+      showToast('⚠️ Chưa có Cloud Sync — Dữ liệu chỉ lưu local. Vào Settings → ☁️ để cài Supabase.', 'error');
+    }
+  }, 600);
 
   window.addEventListener('resize', () => { drawBracketLines(); });
   setTimeout(drawBracketLines, 300);
@@ -2542,6 +2620,17 @@ window.addEventListener('DOMContentLoaded', () => {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
   });
 });
+
+/* ================================================================
+   BRACKET FULLSCREEN
+   ================================================================ */
+function toggleBracketFullscreen() {
+  const isFs = document.body.classList.toggle('bracket-fullscreen');
+  const btn = document.getElementById('bracket-fullscreen-btn');
+  btn.textContent = isFs ? '✕' : '⛶';
+  btn.title = isFs ? 'Thoát toàn màn hình' : 'Toàn màn hình bracket';
+  setTimeout(drawBracketLines, 120);
+}
 
 /* ================================================================
    SWITCH TAB — Mobile navigation
