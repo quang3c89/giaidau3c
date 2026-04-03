@@ -631,6 +631,96 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
   .right { display: none; }
   .left { min-width: 220px; }
 }
+
+/* ============ MOBILE TAB NAV ============ */
+.mobile-tabs {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+  background: var(--card); border-top: 1px solid var(--border);
+  height: 54px; justify-content: stretch; align-items: stretch;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+}
+.m-tab {
+  flex: 1; border: none; background: transparent; color: var(--text);
+  font-family: var(--font-main); font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; opacity: 0.5;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 6px 4px;
+}
+.m-tab.active { opacity: 1; color: var(--accent); border-top: 2px solid var(--accent); }
+.m-tab:active { background: rgba(255,255,255,0.05); }
+
+@media (max-width: 768px) {
+  body { overflow: auto; height: auto; min-height: 100vh; }
+
+  .mobile-tabs { display: flex; }
+
+  .main {
+    flex-direction: column;
+    padding-bottom: 54px;
+  }
+
+  .left {
+    flex: none; width: 100%; min-width: unset; max-width: unset;
+    border-right: none; border-bottom: 1px solid var(--border);
+    max-height: unset; overflow-y: visible;
+  }
+
+  .center {
+    flex: none; width: 100%; min-height: 70vh;
+    overflow-x: auto; padding: 8px;
+  }
+
+  .right {
+    display: flex !important;
+    flex: none; width: 100%; border-left: none;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Ẩn left và right ban đầu, chỉ show center */
+  .left  { display: none; }
+  .right { display: none !important; }
+
+  /* Tourney bar compact */
+  .tourney-bar { flex-wrap: wrap; height: auto; min-height: 38px; overflow: visible; }
+
+  /* Theme strip: ẩn bớt dots trên mobile, giữ actions */
+  .theme-strip .label { display: none; }
+
+  /* Player cards: tăng font size tối thiểu */
+  .pn { font-size: 11px !important; }
+  .pu { font-size: 9px !important; }
+
+  /* Spin button lớn hơn để dễ tap */
+  .spin-btn { width: 64px !important; height: 64px !important; font-size: 13px !important; }
+
+  /* Modal full width trên mobile */
+  .modal-c { min-width: unset; width: calc(100vw - 32px); max-width: unset; }
+
+  /* Bracket: cho phép scroll ngang */
+  .bracket-cols { min-width: max-content; }
+
+  /* Tăng touch target các nút nhỏ */
+  .gear-btn { width: 34px; height: 34px; }
+  .t-dot { width: 22px; height: 22px; }
+}
+
+@media (max-width: 768px) {
+  /* Khi tab left active */
+  body.tab-left .left   { display: flex !important; }
+  body.tab-left .center { display: none !important; }
+  body.tab-left .right  { display: none !important; }
+
+  /* Khi tab center active */
+  body.tab-center .left   { display: none !important; }
+  body.tab-center .center { display: flex !important; }
+  body.tab-center .right  { display: none !important; }
+
+  /* Khi tab right active */
+  body.tab-right .left   { display: none !important; }
+  body.tab-right .center { display: none !important; }
+  body.tab-right .right  { display: flex !important; }
+}
 </style>
 </head>
 <body class="viewer-mode">
@@ -685,6 +775,8 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
   <div id="theme-dots"></div>
   <div class="strip-spacer"></div>
   <div class="rt-indicator" id="rt-indicator"><div class="rt-dot offline" id="rt-dot"></div><span id="rt-label">OFFLINE</span></div>
+  <button class="gear-btn" id="undo-btn" onclick="undo()" title="Hoàn tác (Ctrl+Z)" disabled>↩</button>
+  <button class="gear-btn" id="redo-btn" onclick="redo()" title="Làm lại (Ctrl+Y)" disabled>↪</button>
   <button class="gear-btn" title="Settings" onclick="openModal('settings-modal')" style="margin-left:8px;">⚙️</button>
   <button class="gear-btn" title="Supabase Cloud" onclick="openModal('supa-modal')" style="margin-left:4px;">☁️</button>
   <button class="gear-btn" title="Đăng xuất" onclick="doLogout()" style="margin-left:4px;">🔒</button>
@@ -850,6 +942,12 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 
 <script>
 /* ================================================================
+   DEFAULT SUPABASE CREDENTIALS
+   ================================================================ */
+const DEFAULT_SUPA_URL = '';   // để trống, tôi sẽ điền sau
+const DEFAULT_SUPA_KEY = '';   // để trống, tôi sẽ điền sau
+
+/* ================================================================
    THEMES — 5 theme rõ nét, sáng hơn
    ================================================================ */
 const THEMES = {
@@ -944,6 +1042,45 @@ let pushDebounceTimer = null;
 let lastSyncTime = null;
 let pendingSpinPlayer = null;
 let pendingSpinSlot = null;
+
+/* ================================================================
+   UNDO / REDO
+   ================================================================ */
+const undoStack = [];
+const redoStack = [];
+const MAX_HISTORY = 30;
+
+function pushHistory() {
+  undoStack.push(JSON.stringify(S));
+  if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  redoStack.length = 0;
+  updateUndoRedoUI();
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(S));
+  S = JSON.parse(undoStack.pop());
+  renderAll(); setupTopBar(); saveState(); supaPushDebounced();
+  updateUndoRedoUI();
+  showToast('↩ Đã hoàn tác', 'info');
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(S));
+  S = JSON.parse(redoStack.pop());
+  renderAll(); setupTopBar(); saveState(); supaPushDebounced();
+  updateUndoRedoUI();
+  showToast('↪ Đã làm lại', 'info');
+}
+
+function updateUndoRedoUI() {
+  const u = document.getElementById('undo-btn');
+  const r = document.getElementById('redo-btn');
+  if (u) u.disabled = undoStack.length === 0;
+  if (r) r.disabled = redoStack.length === 0;
+}
 
 /* ================================================================
    UTILS
@@ -1066,6 +1203,10 @@ function loadState() {
   if (supaUrl) S.supaUrl = supaUrl;
   if (supaKey) S.supaKey = supaKey;
 
+  // Apply defaults if still empty
+  if (!S.supaUrl && DEFAULT_SUPA_URL) S.supaUrl = DEFAULT_SUPA_URL;
+  if (!S.supaKey && DEFAULT_SUPA_KEY) S.supaKey = DEFAULT_SUPA_KEY;
+
   if (!S.bracket || S.bracket.length === 0) S.bracket = genBracket(S.bracketSize);
   if (!S.tbVals || S.tbVals.length < 6) S.tbVals = [...DEFAULTS.tbVals];
   if (!S.titleFont) S.titleFont = DEFAULTS.titleFont;
@@ -1077,7 +1218,7 @@ function saveState() {
   if (S.supaUrl) localStorage.setItem('live3c_supaUrl', S.supaUrl);
   if (S.supaKey) localStorage.setItem('live3c_supaKey', S.supaKey);
 
-  const s = { ...S, wheelRotation: 0, isSpinning: false };
+  const s = { ...S, wheelRotation: 0, isSpinning: false, isAdmin: false };
   try { localStorage.setItem('live3c_v4', JSON.stringify(s)); } catch(e) {
     try { localStorage.setItem('live3c_v4', JSON.stringify({...s, bracket:[]})); } catch(e2){}
   }
@@ -1351,6 +1492,13 @@ function saveSupaConfig() {
 async function init() {
   const loadTxt = document.getElementById('loading-txt');
 
+  // Parse Supabase credentials từ URL hash
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  const hashUrl = hash.get('supaUrl');
+  const hashKey = hash.get('supaKey');
+  if (hashUrl) localStorage.setItem('live3c_supaUrl', hashUrl);
+  if (hashKey) localStorage.setItem('live3c_supaKey', hashKey);
+
   loadTxt.textContent = 'ĐỌC DỮ LIỆU...';
   loadState();
 
@@ -1389,6 +1537,8 @@ async function init() {
   setTimeout(drawBracketLines, 300);
 
   if (S.supaUrl && S.supaKey) setupRealtime();
+
+  if (window.innerWidth <= 768) switchTab('left');
 }
 
 function renderAll() {
@@ -1509,6 +1659,8 @@ function setupTopBar() {
     el.textContent = S.tbVals[i] || DEFAULTS.tbVals[i] || '';
     if (i === 0) el.style.fontFamily = S.titleFont || DEFAULTS.titleFont;
     el.oninput = () => {
+      clearTimeout(el._histTimer);
+      el._histTimer = setTimeout(() => pushHistory(), 500);
       S.tbVals[i] = el.textContent.trim();
       saveState();
       supaPushDebounced();
@@ -1590,6 +1742,7 @@ function genBracket(size) {
 function addPlayer() {
   const n = document.getElementById('add-name').value.trim();
   if (!n) return;
+  pushHistory();
   S.players.push({
     id: 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
     name: n,
@@ -1607,6 +1760,7 @@ function addPlayer() {
 
 function removePlayer(id) {
   if (!confirm('Xóa cơ thủ này?')) return;
+  pushHistory();
   S.players = S.players.filter(p => p.id !== id);
   S.bracket.forEach(round => round.forEach(m => {
     if (m.p1 && m.p1.id === id) { m.p1 = null; if (m.winner && m.winner.id === id) m.winner = null; }
@@ -2137,6 +2291,7 @@ function updateScore(r, mi, pk, e) {
 
 function setWinner(r, mi, pk) {
   if (!S.isAdmin) return;
+  pushHistory();
   const m = S.bracket[r][mi];
   const w = pk === 'p1' ? m.p1 : m.p2;
   if (!w) return;
@@ -2250,6 +2405,7 @@ function drawBracketLines() {
 function updateBracketSize() {
   let raw = parseInt(document.getElementById('bracket-size-input').value);
   if (isNaN(raw) || raw < 2) raw = 4;
+  pushHistory();
   const sz = Math.pow(2, Math.ceil(Math.log2(raw)));
   document.getElementById('bracket-columns').innerHTML = '';
   document.getElementById('bracket-lines').innerHTML = '';
@@ -2272,6 +2428,7 @@ function handleExcel(e) {
     const wb = XLSX.read(new Uint8Array(evt.target.result), {type:'array'});
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
     let added = 0;
+    pushHistory();
     rows.slice(1).forEach(row => {
       if (row[0]) {
         S.players.push({
@@ -2321,7 +2478,32 @@ function exportImage(elementId, filename) {
 window.addEventListener('DOMContentLoaded', () => {
   // Luôn khởi động ngay, viewer mode là mặc định
   init();
+
+  // Keyboard shortcuts for undo/redo
+  document.addEventListener('keydown', e => {
+    if (!S.isAdmin) return;
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
+  });
 });
+
+/* ================================================================
+   SWITCH TAB — Mobile navigation
+   ================================================================ */
+function switchTab(tab) {
+  document.body.classList.remove('tab-left','tab-center','tab-right');
+  document.body.classList.add('tab-' + tab);
+  document.querySelectorAll('.m-tab').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  if (tab === 'center') setTimeout(drawBracketLines, 100);
+}
 </script>
+
+  <div class="mobile-tabs" id="mobile-tabs">
+    <button class="m-tab active" data-tab="left" onclick="switchTab('left')">👥 Cơ thủ</button>
+    <button class="m-tab" data-tab="center" onclick="switchTab('center')">🎯 Bracket</button>
+    <button class="m-tab" data-tab="right" onclick="switchTab('right')">📋 Thông tin</button>
+  </div>
 </body>
 </html>
