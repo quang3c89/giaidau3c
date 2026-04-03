@@ -355,20 +355,20 @@ body.viewer-mode .spin-btn { display: none; }
 
 /* ============ CENTER PANEL (BRACKET) ============ */
 .center { flex: 1; position: relative; overflow: auto; padding: 12px; background: radial-gradient(ellipse at center, rgba(240,165,0,0.02) 0%, transparent 70%); }
-.bracket-wrap { position: relative; display: inline-flex; min-width: 100%; min-height: 100%; align-items: center; }
+.bracket-wrap { position: relative; display: inline-flex; min-width: 100%; min-height: 100%; align-items: stretch; }
 #bracket-lines { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; overflow: visible; }
-.bracket-cols { display: flex; gap: 0; z-index: 2; padding: 20px 32px; align-items: center; justify-content: center; min-width: 100%; }
+.bracket-cols { display: flex; gap: 0; z-index: 2; padding: 20px 16px; align-items: stretch; justify-content: center; min-width: 100%; min-height: calc(100vh - 120px); }
 
 /* SYMMETRICAL BRACKET */
-.bracket-side { display: flex; gap: 0; align-items: center; }
+.bracket-side { display: flex; gap: 0; align-items: stretch; }
 .bracket-side.left-side { flex-direction: row; }
 .bracket-side.right-side { flex-direction: row-reverse; }
-.bracket-center { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 28px; gap: 10px; }
+.bracket-center { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 20px; gap: 10px; flex-shrink: 0; }
 
 .round-col {
   display: flex; flex-direction: column;
-  width: 172px; padding: 0 8px;
-  position: relative; align-self: stretch;
+  width: 168px; padding: 0 6px;
+  position: relative;
 }
 .round-label {
   text-align: center; font-size: 9px; font-weight: 800; text-transform: uppercase;
@@ -1051,6 +1051,10 @@ document.addEventListener('click', (e) => {
    STORAGE
    ================================================================ */
 function loadState() {
+  // Supabase credentials stored separately — never wiped by state reset
+  const supaUrl = localStorage.getItem('live3c_supaUrl') || '';
+  const supaKey = localStorage.getItem('live3c_supaKey') || '';
+
   const saved = localStorage.getItem('live3c_v4');
   if (saved) {
     try {
@@ -1058,6 +1062,10 @@ function loadState() {
       S = { ...S, ...p };
     } catch(e) {}
   }
+  // Always override with dedicated supa keys (source of truth for all devices)
+  if (supaUrl) S.supaUrl = supaUrl;
+  if (supaKey) S.supaKey = supaKey;
+
   if (!S.bracket || S.bracket.length === 0) S.bracket = genBracket(S.bracketSize);
   if (!S.tbVals || S.tbVals.length < 6) S.tbVals = [...DEFAULTS.tbVals];
   if (!S.titleFont) S.titleFont = DEFAULTS.titleFont;
@@ -1065,6 +1073,10 @@ function loadState() {
 }
 
 function saveState() {
+  // Always persist supa credentials separately (survives any state wipe)
+  if (S.supaUrl) localStorage.setItem('live3c_supaUrl', S.supaUrl);
+  if (S.supaKey) localStorage.setItem('live3c_supaKey', S.supaKey);
+
   const s = { ...S, wheelRotation: 0, isSpinning: false };
   try { localStorage.setItem('live3c_v4', JSON.stringify(s)); } catch(e) {
     try { localStorage.setItem('live3c_v4', JSON.stringify({...s, bracket:[]})); } catch(e2){}
@@ -1318,12 +1330,18 @@ async function supaLoadSilent() {
 }
 
 function saveSupaConfig() {
-  S.supaUrl = document.getElementById('supa-url2').value.trim();
-  S.supaKey = document.getElementById('supa-key2').value.trim();
-  document.getElementById('supa-url').value = S.supaUrl;
-  document.getElementById('supa-key').value = S.supaKey;
+  const url = document.getElementById('supa-url2').value.trim();
+  const key = document.getElementById('supa-key2').value.trim();
+  S.supaUrl = url;
+  S.supaKey = key;
+  // Persist credentials immediately and separately
+  localStorage.setItem('live3c_supaUrl', url);
+  localStorage.setItem('live3c_supaKey', key);
+  // Sync to settings panel
+  const u1 = document.getElementById('supa-url'); if(u1) u1.value = url;
+  const k1 = document.getElementById('supa-key'); if(k1) k1.value = key;
   saveState();
-  showToast('☁️ Đã lưu config — đang kết nối...', 'info');
+  showToast('☁️ Đã lưu — đang kết nối Supabase...', 'info');
   supaLoad();
 }
 
@@ -1874,82 +1892,84 @@ function resetWheel() {
 }
 
 /* ================================================================
-   BRACKET RENDER — Symmetrical layout
+   BRACKET RENDER — True symmetrical: left half | finals | right half
+   Reference: 16p → left 8 slots (4 matches R1 + 2 QF + 1 SF), right mirror
    ================================================================ */
-const ROUND_NAMES = ['Vòng 1','Vòng 2','Tứ kết','Bán kết','Chung kết','Champion'];
+const ROUND_NAMES = ['Vòng 1','Vòng 2','Tứ kết','Bán kết','Chung kết'];
+
+function getRoundName(r, totalRounds) {
+  const fromEnd = totalRounds - 1 - r;
+  if (fromEnd === 0) return 'CHUNG KẾT';
+  if (fromEnd === 1) return 'BÁN KẾT';
+  if (fromEnd === 2) return 'TỨ KẾT';
+  return `VÒNG ${r + 1}`;
+}
 
 function renderBracket() {
   const container = document.getElementById('bracket-columns');
   container.innerHTML = '';
-  const rounds = S.bracket.length;
+  const rounds = S.bracket.length; // e.g. 4 for 16-player
   if (rounds === 0) return;
 
   if (rounds === 1) {
-    renderLinearBracket(container);
+    // Only final — show linearly
+    container.appendChild(makeFinalCol(0));
     setTimeout(drawBracketLines, 80);
     return;
   }
 
-  // rounds = log2(bracketSize)
-  // Ex: 16 players = 4 rounds (0=R16, 1=QF, 2=SF, 3=Final)
-  // Left side: first half of rounds (earlier rounds on outside, then inward)
-  // Right side: second half (mirror)
-  // Center: Final
+  /*
+   * Layout (e.g. 16 players, 4 rounds):
+   *   LEFT side (outward→inward): R0(8 matches), R1(4 matches) — col index 0,1
+   *   CENTER: Final (R3)
+   *   RIGHT side (inward→outward, mirrored): R2(2 matches), R1-mirror? NO —
+   *
+   * Actually for a true bilateral bracket with N rounds:
+   *   Left half handles matches[0..N/2-1] of each round
+   *   Right half handles matches[N/2..N-1] of each round
+   *   BUT the rounds themselves are ALL the same — just different match indices
+   *
+   * CORRECT bilateral bracket structure:
+   *   rounds-1 side columns per side, going from outermost (R0) inward (R_{n-2})
+   *   Left columns: same round index r, but only LEFT half of matches (mi < matchCount/2)
+   *   Right columns: same round index r, but only RIGHT half of matches (mi >= matchCount/2)
+   *   Center: Final match
+   *
+   * For 16p (4 rounds):
+   *   R0: 8 matches → left 0-3, right 4-7
+   *   R1: 4 matches → left 0-1, right 2-3
+   *   R2: 2 matches → left 0, right 1  (semifinals)
+   *   R3: 1 match  → CENTER (final)
+   *
+   * Column order left→right:
+   *   [R0-left] [R1-left] [R2-left] | FINAL | [R2-right] [R1-right] [R0-right]
+   */
 
-  const finalRoundIdx = rounds - 1;
-  // Number of rounds per side (excluding final)
-  const sideRounds = finalRoundIdx; // total side rounds = rounds-1
-  const leftCount = Math.ceil(sideRounds / 2);  // e.g. 4 rounds: left=2, right=1 (SF on left only if odd)
-  const rightCount = Math.floor(sideRounds / 2);
+  const finalRound = rounds - 1;
 
+  // Build left side: rounds 0 .. finalRound-1, left half of matches
   const leftSide = document.createElement('div');
   leftSide.className = 'bracket-side left-side';
+
+  // Build right side: rounds finalRound-1 .. 0, right half of matches (reversed col order)
+  const rightSide = document.createElement('div');
+  rightSide.className = 'bracket-side right-side';
 
   const centerDiv = document.createElement('div');
   centerDiv.className = 'bracket-center';
 
-  const rightSide = document.createElement('div');
-  rightSide.className = 'bracket-side right-side';
-
-  // LEFT side: rounds 0 .. leftCount-1 (round 0 outermost)
-  for (let r = 0; r < leftCount; r++) {
-    leftSide.appendChild(makeRoundCol(r, rounds, false));
+  // Left: columns go R0→R(n-2), each col shows LEFT half of that round
+  for (let r = 0; r < finalRound; r++) {
+    leftSide.appendChild(makeHalfRoundCol(r, 'left', rounds));
   }
 
-  // FINALS center
-  const finalsMatch = S.bracket[finalRoundIdx][0];
-  const hasWinner = !!finalsMatch.winner;
-
-  const finalsLabel = document.createElement('div');
-  finalsLabel.className = 'champion-label';
-  finalsLabel.textContent = '🏆 CHUNG KẾT';
-
-  const fBox = document.createElement('div');
-  fBox.className = 'mb finals-match' + (hasWinner ? ' has-winner' : '');
-  fBox.id = `mb-${finalRoundIdx}-0`;
-
-  const w1 = finalsMatch.winner && finalsMatch.p1 && finalsMatch.winner.id === finalsMatch.p1.id;
-  const w2 = finalsMatch.winner && finalsMatch.p2 && finalsMatch.winner.id === finalsMatch.p2.id;
-  fBox.appendChild(makeMatchPlayer(finalsMatch.p1, finalsMatch.s1, 'p1', w1, finalRoundIdx, 0));
-  fBox.appendChild(makeMatchPlayer(finalsMatch.p2, finalsMatch.s2, 'p2', w2, finalRoundIdx, 0));
-
-  if (hasWinner) {
-    const champDiv = document.createElement('div');
-    champDiv.style.cssText = 'padding:8px;text-align:center;border-top:1px solid rgba(255,255,255,0.08);';
-    champDiv.innerHTML = `
-      <div style="font-family:var(--font-display);font-size:11px;letter-spacing:1px;opacity:0.5;margin-bottom:2px;">VÔ ĐỊCH</div>
-      <div style="font-family:var(--font-display);font-size:18px;font-weight:900;color:var(--accent);text-shadow:0 0 20px var(--accent);">🏆 ${finalsMatch.winner.name}</div>
-    `;
-    fBox.appendChild(champDiv);
+  // Right: columns go R(n-2)→R0 visually (row-reverse handles it), each col RIGHT half
+  for (let r = 0; r < finalRound; r++) {
+    rightSide.appendChild(makeHalfRoundCol(r, 'right', rounds));
   }
 
-  centerDiv.appendChild(finalsLabel);
-  centerDiv.appendChild(fBox);
-
-  // RIGHT side: rounds leftCount .. finalRoundIdx-1 (displayed in reverse via flex-direction:row-reverse)
-  for (let r = leftCount; r < finalRoundIdx; r++) {
-    rightSide.appendChild(makeRoundCol(r, rounds, true));
-  }
+  // Center: Final
+  centerDiv.appendChild(makeFinalCol(finalRound));
 
   container.appendChild(leftSide);
   container.appendChild(centerDiv);
@@ -1958,32 +1978,27 @@ function renderBracket() {
   setTimeout(drawBracketLines, 80);
 }
 
-function renderLinearBracket(container) {
-  S.bracket.forEach((matches, r) => {
-    container.appendChild(makeRoundCol(r, S.bracket.length, false));
-  });
-  setTimeout(drawBracketLines, 80);
-}
-
-function makeRoundCol(r, totalRounds, isRight) {
+// Make a column for half of a round (left or right half of matches)
+function makeHalfRoundCol(r, side, totalRounds) {
   const col = document.createElement('div');
   col.className = 'round-col';
-  col.id = `round-col-${r}`;
+  col.id = `round-col-${r}-${side}`;
 
   const lbl = document.createElement('div');
   lbl.className = 'round-label';
-  const roundName = r === totalRounds - 1 ? 'CHUNG KẾT'
-    : r === totalRounds - 2 ? 'BÁN KẾT'
-    : r === totalRounds - 3 ? 'TỨ KẾT'
-    : `VÒNG ${r + 1}`;
-  lbl.textContent = roundName;
+  lbl.textContent = getRoundName(r, totalRounds);
   col.appendChild(lbl);
 
-  // Matches container with even space distribution
   const matchesWrap = document.createElement('div');
-  matchesWrap.style.cssText = 'display:flex; flex-direction:column; justify-content:space-around; flex:1;';
+  matchesWrap.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;flex:1;';
 
-  S.bracket[r].forEach((m, mi) => {
+  const allMatches = S.bracket[r];
+  const half = allMatches.length / 2;
+  const startMi = side === 'left' ? 0 : half;
+  const endMi   = side === 'left' ? half : allMatches.length;
+
+  for (let mi = startMi; mi < endMi; mi++) {
+    const m = allMatches[mi];
     const bx = document.createElement('div');
     bx.className = 'mb'; bx.id = `mb-${r}-${mi}`;
     const w1 = m.winner && m.p1 && m.winner.id === m.p1.id;
@@ -1992,13 +2007,76 @@ function makeRoundCol(r, totalRounds, isRight) {
     bx.appendChild(makeMatchPlayer(m.p2, m.s2, 'p2', w2, r, mi));
 
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'padding:5px 0;';
+    wrap.style.cssText = 'padding:4px 0;';
     wrap.appendChild(bx);
     matchesWrap.appendChild(wrap);
-  });
+  }
 
   col.appendChild(matchesWrap);
   return col;
+}
+
+// Make the final center column
+function makeFinalCol(r) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:8px;';
+
+  const lbl = document.createElement('div');
+  lbl.className = 'champion-label';
+  lbl.textContent = '🏆 CHUNG KẾT';
+  wrap.appendChild(lbl);
+
+  const m = S.bracket[r][0];
+  const fBox = document.createElement('div');
+  fBox.className = 'mb finals-match' + (m.winner ? ' has-winner' : '');
+  fBox.id = `mb-${r}-0`;
+
+  const w1 = m.winner && m.p1 && m.winner.id === m.p1.id;
+  const w2 = m.winner && m.p2 && m.winner.id === m.p2.id;
+  fBox.appendChild(makeMatchPlayer(m.p1, m.s1, 'p1', w1, r, 0));
+  fBox.appendChild(makeMatchPlayer(m.p2, m.s2, 'p2', w2, r, 0));
+
+  if (m.winner) {
+    const champDiv = document.createElement('div');
+    champDiv.style.cssText = 'padding:8px;text-align:center;border-top:1px solid rgba(255,255,255,0.1);';
+    champDiv.innerHTML = `
+      <div style="font-family:var(--font-display);font-size:10px;letter-spacing:1.5px;opacity:0.4;margin-bottom:2px;text-transform:uppercase;">Vô Địch</div>
+      <div style="font-family:var(--font-display);font-size:20px;font-weight:900;color:var(--accent);text-shadow:0 0 20px var(--accent);">🏆 ${m.winner.name}</div>
+    `;
+    fBox.appendChild(champDiv);
+  }
+
+  wrap.appendChild(fBox);
+  return wrap;
+}
+
+function renderLinearBracket(container) {
+  S.bracket.forEach((matches, r) => {
+    const col = document.createElement('div');
+    col.className = 'round-col';
+    col.id = `round-col-${r}-left`;
+    const lbl = document.createElement('div');
+    lbl.className = 'round-label';
+    lbl.textContent = getRoundName(r, S.bracket.length);
+    col.appendChild(lbl);
+    const mw = document.createElement('div');
+    mw.style.cssText = 'display:flex;flex-direction:column;justify-content:space-around;flex:1;';
+    matches.forEach((m, mi) => {
+      const bx = document.createElement('div');
+      bx.className = 'mb'; bx.id = `mb-${r}-${mi}`;
+      const w1 = m.winner && m.p1 && m.winner.id === m.p1.id;
+      const w2 = m.winner && m.p2 && m.winner.id === m.p2.id;
+      bx.appendChild(makeMatchPlayer(m.p1, m.s1, 'p1', w1, r, mi));
+      bx.appendChild(makeMatchPlayer(m.p2, m.s2, 'p2', w2, r, mi));
+      const wp = document.createElement('div');
+      wp.style.cssText = 'padding:4px 0;';
+      wp.appendChild(bx);
+      mw.appendChild(wp);
+    });
+    col.appendChild(mw);
+    container.appendChild(col);
+  });
+  setTimeout(drawBracketLines, 80);
 }
 
 function makeMatchPlayer(player, score, pKey, isWinner, r, mi) {
@@ -2073,70 +2151,95 @@ function setWinner(r, mi, pk) {
 }
 
 /* ================================================================
-   BRACKET LINES — Clean orthogonal SVG connectors
+   BRACKET LINES — Animated orthogonal connectors for bilateral bracket
    ================================================================ */
 function drawBracketLines() {
   const svg = document.getElementById('bracket-lines');
   const cont = document.getElementById('bracket-container');
   svg.innerHTML = '';
-  svg.setAttribute('width', cont.scrollWidth);
-  svg.setAttribute('height', cont.scrollHeight);
+
+  const cw = cont.scrollWidth, ch = cont.scrollHeight;
+  svg.setAttribute('width', cw);
+  svg.setAttribute('height', ch);
+  svg.setAttribute('viewBox', `0 0 ${cw} ${ch}`);
 
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#f0a500';
   const rounds = S.bracket.length;
   const contRect = cont.getBoundingClientRect();
 
+  function px(el) {
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return {
+      left:   r.left   - contRect.left + cont.scrollLeft,
+      right:  r.right  - contRect.left + cont.scrollLeft,
+      top:    r.top    - contRect.top  + cont.scrollTop,
+      bottom: r.bottom - contRect.top  + cont.scrollTop,
+      midY:   r.top + r.height / 2 - contRect.top + cont.scrollTop,
+      midX:   r.left + r.width / 2  - contRect.left + cont.scrollLeft,
+      width:  r.width, height: r.height
+    };
+  }
+
+  function makePath(d, winner) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', accent);
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    if (winner) {
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('opacity', '0.75');
+      path.setAttribute('stroke-dasharray', '8 4');
+      path.style.animation = 'flowl 1.2s linear infinite';
+      path.style.filter = `drop-shadow(0 0 4px ${accent})`;
+    } else {
+      path.setAttribute('stroke-width', '1.2');
+      path.setAttribute('opacity', '0.2');
+      path.setAttribute('stroke-dasharray', '4 6');
+    }
+    return path;
+  }
+
+  // For each round r (0..rounds-2), connect each match to its parent in round r+1
   for (let r = 0; r < rounds - 1; r++) {
     const mc = S.bracket[r].length;
-    for (let m = 0; m < mc; m++) {
-      const srcEl = document.getElementById(`mb-${r}-${m}`);
-      const dstEl = document.getElementById(`mb-${r+1}-${Math.floor(m/2)}`);
+    for (let mi = 0; mi < mc; mi++) {
+      const srcEl = document.getElementById(`mb-${r}-${mi}`);
+      const parentMi = Math.floor(mi / 2);
+      const dstEl = document.getElementById(`mb-${r + 1}-${parentMi}`);
       if (!srcEl || !dstEl) continue;
 
-      const sr = srcEl.getBoundingClientRect();
-      const dr = dstEl.getBoundingClientRect();
+      const src = px(srcEl);
+      const dst = px(dstEl);
+      if (!src || !dst) continue;
 
-      // source mid-y (center of match box)
-      const sy = sr.top + sr.height / 2 - contRect.top + cont.scrollTop;
-      const dy = dr.top + dr.height / 2 - contRect.top + cont.scrollTop;
+      const hasWinner = !!S.bracket[r][mi].winner;
 
-      // source x: right edge if src is left of dst, left edge if right of dst
-      const srcMidX = sr.left + sr.width / 2 - contRect.left + cont.scrollLeft;
-      const dstMidX = dr.left + dr.width / 2 - contRect.left + cont.scrollLeft;
+      // Determine if source is LEFT or RIGHT of its parent
+      const isLeftSide = src.midX < dst.midX;
 
-      let sx, ex;
-      if (srcMidX <= dstMidX) {
-        // source is on the left — connect right edge of src to left edge of dst
-        sx = sr.right - contRect.left + cont.scrollLeft;
-        ex = dr.left  - contRect.left + cont.scrollLeft;
+      let sx, ex, sy, dy, mx;
+      if (isLeftSide) {
+        // Source is left: exit right edge of src, enter left edge of dst
+        sx = src.right;
+        ex = dst.left;
+        sy = src.midY;
+        dy = dst.midY;
+        mx = sx + (ex - sx) * 0.5;
       } else {
-        // source is on the right — connect left edge of src to right edge of dst
-        sx = sr.left  - contRect.left + cont.scrollLeft;
-        ex = dr.right - contRect.left + cont.scrollLeft;
+        // Source is right: exit left edge of src, enter right edge of dst
+        sx = src.left;
+        ex = dst.right;
+        sy = src.midY;
+        dy = dst.midY;
+        mx = sx + (ex - sx) * 0.5;
       }
 
-      const hasWinner = !!S.bracket[r][m].winner;
-      const midX = sx + (ex - sx) / 2;
-
-      // Orthogonal path: right → horizontal → vertical → horizontal → right
-      const d = `M ${sx} ${sy} L ${midX} ${sy} L ${midX} ${dy} L ${ex} ${dy}`;
-
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', d);
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', accent);
-      path.setAttribute('stroke-width', hasWinner ? '2' : '1.2');
-      path.setAttribute('stroke-linecap', 'round');
-      path.setAttribute('stroke-linejoin', 'round');
-      path.setAttribute('opacity', hasWinner ? '0.65' : '0.18');
-      if (hasWinner) {
-        path.setAttribute('stroke-dasharray', '6 3');
-        path.style.animation = 'flowl 1.5s linear infinite';
-        path.style.filter = `drop-shadow(0 0 3px ${accent})`;
-      } else {
-        path.setAttribute('stroke-dasharray', '4 5');
-      }
-      svg.appendChild(path);
+      // Orthogonal elbow: horizontal → vertical → horizontal
+      const d = `M ${sx} ${sy} L ${mx} ${sy} L ${mx} ${dy} L ${ex} ${dy}`;
+      svg.appendChild(makePath(d, hasWinner));
     }
   }
 }
