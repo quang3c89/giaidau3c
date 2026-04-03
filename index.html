@@ -274,7 +274,7 @@ body.viewer-mode .gear-btn { display: none !important; }
 }
 .brand-txt .by { color: #f0a500; text-shadow: 0 0 20px rgba(240,165,0,0.4); }
 .brand-txt .br { color: #e05a2b; text-shadow: 0 0 20px rgba(224,90,43,0.4); }
-.brand-txt .bw { color: #ffffff; rgba(255,255,255,0.5); }
+.brand-txt .bw { color: rgba(255,255,255,0.5); }
 @keyframes brandPulse {
   0%,100% { filter: drop-shadow(0 0 6px rgba(240,165,0,0.2)); }
   50% { filter: drop-shadow(0 0 14px rgba(240,165,0,0.5)); }
@@ -767,29 +767,11 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
   display: none;
   position: absolute;
   inset: 0;
-  overflow: hidden;
-  background: var(--bg);
-  flex-direction: column;
-}
-#schedule-panel.active { display: flex; }
-
-/* Sticky header inside schedule panel */
-.schedule-header-sticky {
-  flex-shrink: 0;
-  background: var(--bg);
-  padding: 10px 20px 12px;
-  border-bottom: 1px solid var(--border);
-  position: relative;
-  z-index: 5;
-}
-
-/* Scrollable body */
-.schedule-body-scroll {
-  flex: 1;
   overflow-y: auto;
-  padding: 16px 20px 20px;
-  scroll-behavior: smooth;
+  padding: 52px 20px 20px;
+  background: var(--bg);
 }
+#schedule-panel.active { display: block; }
 
 /* When schedule is active, hide bracket */
 .center.schedule-active #bracket-container { display: none; }
@@ -798,10 +780,14 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 /* ============ SCHEDULE HEADER ============ */
 .schedule-header {
   text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
 }
 .schedule-title {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 900;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -809,15 +795,14 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  line-height: 1.2;
 }
 .schedule-subtitle {
   font-family: var(--font-mono);
   font-size: 9px;
-  opacity: 0.4;
+  opacity: 0.35;
   letter-spacing: 2px;
   text-transform: uppercase;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 /* ============ SCHEDULE ROUND SECTION ============ */
@@ -922,21 +907,10 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
   opacity: 0.35;
   letter-spacing: 1px;
   text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: 3px;
-  border: 1px solid transparent;
-}
-.sched-match-status.pending {
-  color: var(--accent);
-  border-color: rgba(240,165,0,0.3);
-  opacity: 0.7;
-  background: rgba(240,165,0,0.07);
 }
 .sched-match-status.done {
   color: #22c55e;
-  opacity: 0.9;
-  border-color: rgba(34,197,94,0.3);
-  background: rgba(34,197,94,0.08);
+  opacity: 0.7;
 }
 
 /* Match body: [ Player1 ] [ ICON ] [ Player2 ] */
@@ -982,7 +956,7 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 
 .sched-name {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   color: var(--name-color);
   white-space: nowrap;
@@ -994,7 +968,7 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 .sched-name.left-name { color: #60a5fa; }
 .sched-name.right-name { color: #f87171; }
 .sched-name.empty-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 400;
   font-style: italic;
   opacity: 0.3;
@@ -1017,7 +991,7 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 }
 
 .sched-unit {
-  font-size: 15px;
+  font-size: 12px;
   color: var(--unit-color);
   font-style: italic;
   white-space: nowrap;
@@ -1048,143 +1022,27 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 52px;
-  gap: 3px;
+  width: 50px;
+  gap: 4px;
 }
-.sched-vs-img {
+.sched-ball-icon {
   width: 32px;
   height: 32px;
-  object-fit: contain;
   flex-shrink: 0;
-  filter: drop-shadow(0 2px 8px rgba(240,165,0,0.5));
-  transition: filter 0.3s;
+  filter: drop-shadow(0 2px 6px rgba(240,165,0,0.4));
+  animation: ballSpin 8s linear infinite;
 }
-.sched-match:hover .sched-vs-img {
-  filter: drop-shadow(0 2px 16px rgba(240,165,0,0.9)) brightness(1.1);
-}
-
-/* ============ WINNER POPUP ============ */
-#winner-popup {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 8500;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(6px);
-  animation: wpBgIn 0.2s ease;
-}
-#winner-popup.show { display: flex; }
-@keyframes wpBgIn { from { opacity:0; } to { opacity:1; } }
-.winner-popup-box {
-  background: var(--card);
-  border: 1px solid var(--accent);
-  border-radius: 18px;
-  padding: 28px 36px 24px;
-  text-align: center;
-  min-width: 300px;
-  max-width: 420px;
-  width: 90vw;
-  box-shadow: 0 0 60px rgba(240,165,0,0.25), 0 24px 60px rgba(0,0,0,0.7);
-  animation: wpBoxIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
-  position: relative;
-  overflow: hidden;
-}
-.winner-popup-box::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(240,165,0,0.12) 0%, transparent 65%);
-  pointer-events: none;
-}
-@keyframes wpBoxIn {
-  from { opacity:0; transform: scale(0.75) translateY(20px); }
-  to { opacity:1; transform: none; }
-}
-.winner-popup-trophy {
-  font-size: 44px;
-  animation: wpTrophyBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.15s both;
-  display: block;
-  line-height: 1;
-  margin-bottom: 8px;
-}
-@keyframes wpTrophyBounce {
-  from { opacity:0; transform: scale(0.4) rotate(-15deg); }
-  to   { opacity:1; transform: none; }
-}
-.winner-popup-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  opacity: 0.4;
-  margin-bottom: 6px;
-}
-.winner-popup-name {
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 900;
-  color: var(--accent);
-  letter-spacing: 0.5px;
-  line-height: 1.1;
-  text-shadow: 0 0 30px rgba(240,165,0,0.5);
-  margin-bottom: 4px;
-  word-break: break-word;
-}
-.winner-popup-sub {
-  font-size: 12px;
-  color: var(--unit-color);
-  font-style: italic;
-  opacity: 0.7;
-  margin-bottom: 18px;
-}
-.winner-popup-close {
-  padding: 8px 28px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255,255,255,0.06);
-  color: var(--text);
-  font-weight: 700;
-  font-family: inherit;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.winner-popup-close:hover {
-  background: rgba(255,255,255,0.12);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* ============ MOBILE BRACKET LANDSCAPE ============ */
-@media (max-width: 768px) {
-  /* Bracket: horizontal scroll, zoom-friendly */
-  .center {
-    overflow-x: auto !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-  }
-  .bracket-wrap {
-    min-width: max-content;
-  }
-  .bracket-cols {
-    min-width: max-content;
-    padding: 12px 8px;
-  }
-  .round-col { width: 150px !important; padding: 0 4px; }
-  .mb { min-height: unset; }
-  .mn { font-size: 10px !important; }
-  .mp-unit { font-size: 7.5px !important; }
+@keyframes ballSpin {
+  0% { filter: drop-shadow(0 2px 6px rgba(240,165,0,0.4)); }
+  50% { filter: drop-shadow(0 2px 12px rgba(224,90,43,0.6)); }
+  100% { filter: drop-shadow(0 2px 6px rgba(240,165,0,0.4)); }
 }
 
 @media (max-width: 768px) {
   .schedule-columns { flex-direction: column; gap: 10px; }
   .schedule-divider { display: none; }
-  .sched-name { font-size: 16px !important; }
-  .sched-unit { font-size: 13px !important; }
-  .sched-match-body { min-height: 58px; }
+  .sched-name { font-size: 15px; }
+  .sched-unit { font-size: 11px; }
 }
 </style>
 </head>
@@ -1428,98 +1286,53 @@ const DEFAULT_SUPA_URL = '';   // để trống, tôi sẽ điền sau
 const DEFAULT_SUPA_KEY = '';   // để trống, tôi sẽ điền sau
 
 /* ================================================================
-   THEMES — 10 Sport-style themes
+   THEMES — 5 theme rõ nét, sáng hơn
    ================================================================ */
 const THEMES = {
-  'red-fire': {
-    name: '🔴 Red Fire',
-    bg:'#0f0404', card:'#1c0a0a', text:'#ffe4e4',
-    accent:'#ff2d2d', accent2:'#ff7a00',
-    sL:'rgba(255,45,45,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#ffe4e4', uc:'#ff9999', rc:'#ff2d2d',
-    tb:'#1c0a0a', border:'rgba(255,45,45,0.18)',
-    dot1:'#ff2d2d', dot2:'#0f0404'
-  },
-  'electric-blue': {
-    name: '🔵 Electric Blue',
-    bg:'#020b18', card:'#061428', text:'#e0f0ff',
-    accent:'#0ea5e9', accent2:'#38bdf8',
-    sL:'rgba(14,165,233,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#e0f0ff', uc:'#7dd3fc', rc:'#0ea5e9',
-    tb:'#020b18', border:'rgba(14,165,233,0.2)',
-    dot1:'#0ea5e9', dot2:'#020b18'
-  },
-  'neon-green': {
-    name: '🟢 Neon Green',
-    bg:'#030c05', card:'#071409', text:'#dcfce7',
-    accent:'#22c55e', accent2:'#4ade80',
-    sL:'rgba(34,197,94,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#dcfce7', uc:'#86efac', rc:'#22c55e',
-    tb:'#030c05', border:'rgba(34,197,94,0.2)',
-    dot1:'#22c55e', dot2:'#030c05'
-  },
-  'orange-energy': {
-    name: '🟠 Orange Energy',
-    bg:'#0d0700', card:'#1a0e00', text:'#fff3e0',
-    accent:'#f97316', accent2:'#fb923c',
-    sL:'rgba(249,115,22,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#fff3e0', uc:'#fdba74', rc:'#f97316',
-    tb:'#0d0700', border:'rgba(249,115,22,0.2)',
-    dot1:'#f97316', dot2:'#0d0700'
-  },
-  'purple-storm': {
-    name: '🟣 Purple Storm',
-    bg:'#07020f', card:'#100520', text:'#f3e8ff',
-    accent:'#a855f7', accent2:'#c084fc',
-    sL:'rgba(168,85,247,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#f3e8ff', uc:'#d8b4fe', rc:'#a855f7',
-    tb:'#07020f', border:'rgba(168,85,247,0.2)',
-    dot1:'#a855f7', dot2:'#07020f'
-  },
-  'gold-champion': {
-    name: '🏆 Gold Champion',
-    bg:'#08060a', card:'#13100a', text:'#fef9e7',
+  'carbon-gold': {
+    name: 'Carbon Gold',
+    bg:'#0d1117', card:'#161b22', text:'#e6edf3',
     accent:'#f0a500', accent2:'#e05a2b',
-    sL:'rgba(240,165,0,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#fef9e7', uc:'#fcd34d', rc:'#f0a500',
-    tb:'#08060a', border:'rgba(240,165,0,0.18)',
-    dot1:'#f0a500', dot2:'#08060a'
+    sL:'rgba(255,255,255,0.04)', sD:'rgba(0,0,0,0.6)', r:'10px',
+    nc:'#e6edf3', uc:'#8b949e', rc:'#f0a500',
+    tb:'#0d1117', border:'rgba(255,255,255,0.08)',
+    dot1:'#f0a500', dot2:'#0d1117'
   },
-  'ice-cyan': {
-    name: '🧊 Ice Cyan',
-    bg:'#020e10', card:'#061820', text:'#e0fafa',
-    accent:'#06b6d4', accent2:'#22d3ee',
-    sL:'rgba(6,182,212,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#e0fafa', uc:'#67e8f9', rc:'#06b6d4',
-    tb:'#020e10', border:'rgba(6,182,212,0.2)',
-    dot1:'#06b6d4', dot2:'#020e10'
+  'royal-blue': {
+    name: 'Royal Blue',
+    bg:'#eef2ff', card:'#ffffff', text:'#1e1b4b',
+    accent:'#4f46e5', accent2:'#7c3aed',
+    sL:'#fff', sD:'rgba(79,70,229,0.2)', r:'12px',
+    nc:'#1e1b4b', uc:'#6366f1', rc:'#4f46e5',
+    tb:'#4f46e5', border:'rgba(79,70,229,0.15)',
+    dot1:'#4f46e5', dot2:'#eef2ff'
   },
-  'dark-sport': {
-    name: '⚫ Dark Sport',
-    bg:'#0a0a0a', card:'#141414', text:'#f5f5f5',
-    accent:'#ffffff', accent2:'#cccccc',
-    sL:'rgba(255,255,255,0.04)', sD:'rgba(0,0,0,0.8)', r:'8px',
-    nc:'#f5f5f5', uc:'#a0a0a0', rc:'#ffffff',
-    tb:'#0a0a0a', border:'rgba(255,255,255,0.12)',
-    dot1:'#ffffff', dot2:'#0a0a0a'
+  'green-arena': {
+    name: 'Green Arena',
+    bg:'#f0fdf4', card:'#ffffff', text:'#14532d',
+    accent:'#16a34a', accent2:'#15803d',
+    sL:'#fff', sD:'rgba(22,163,74,0.15)', r:'10px',
+    nc:'#14532d', uc:'#4ade80', rc:'#16a34a',
+    tb:'#14532d', border:'rgba(22,163,74,0.2)',
+    dot1:'#16a34a', dot2:'#f0fdf4'
   },
-  'pink-flash': {
-    name: '💗 Pink Flash',
-    bg:'#0d0209', card:'#180413', text:'#ffe0f7',
-    accent:'#ec4899', accent2:'#f472b6',
-    sL:'rgba(236,72,153,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#ffe0f7', uc:'#f9a8d4', rc:'#ec4899',
-    tb:'#0d0209', border:'rgba(236,72,153,0.2)',
-    dot1:'#ec4899', dot2:'#0d0209'
+  'coral-sport': {
+    name: 'Coral Sport',
+    bg:'#fff5f5', card:'#ffffff', text:'#7f1d1d',
+    accent:'#dc2626', accent2:'#f97316',
+    sL:'#fff', sD:'rgba(220,38,38,0.15)', r:'14px',
+    nc:'#7f1d1d', uc:'#ef4444', rc:'#dc2626',
+    tb:'#dc2626', border:'rgba(220,38,38,0.15)',
+    dot1:'#dc2626', dot2:'#fff5f5'
   },
-  'lime-punch': {
-    name: '💚 Lime Punch',
-    bg:'#030a01', card:'#081403', text:'#f7fee7',
-    accent:'#84cc16', accent2:'#a3e635',
-    sL:'rgba(132,204,22,0.06)', sD:'rgba(0,0,0,0.7)', r:'10px',
-    nc:'#f7fee7', uc:'#bef264', rc:'#84cc16',
-    tb:'#030a01', border:'rgba(132,204,22,0.2)',
-    dot1:'#84cc16', dot2:'#030a01'
+  'midnight-pro': {
+    name: 'Midnight Pro',
+    bg:'#06070d', card:'#0e1017', text:'#cdd4e0',
+    accent:'#38bdf8', accent2:'#818cf8',
+    sL:'rgba(56,189,248,0.04)', sD:'rgba(0,0,0,0.7)', r:'8px',
+    nc:'#e0f2fe', uc:'#7dd3fc', rc:'#38bdf8',
+    tb:'#06070d', border:'rgba(56,189,248,0.12)',
+    dot1:'#38bdf8', dot2:'#06070d'
   },
 };
 
@@ -1546,9 +1359,9 @@ const TITLE_FONTS = [
 const DEFAULTS = {
   size: 16,
   tbVals: ['3-Cushion Masters', 'Sat, 14:00', 'CLB Arena', 'Single Elim.', '5,000,000đ', ''],
-  tbBg: '#08060a', tbFont: "'DM Sans',sans-serif",
+  tbBg: '#0d1117', tbFont: "'DM Sans',sans-serif",
   titleFont: "'Barlow Condensed', sans-serif",
-  theme: 'gold-champion'
+  theme: 'carbon-gold'
 };
 
 const ADMIN_PASSWORD = 'quang3c89';
