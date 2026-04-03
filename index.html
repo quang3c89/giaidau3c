@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live3C Tournament Manager</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -33,11 +33,10 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-/* Thanh cuộn dày hơn */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
 body {
   font-family: var(--font-main);
@@ -360,29 +359,6 @@ body.viewer-mode .spin-btn { display: none; }
 #bracket-lines { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; overflow: visible; }
 .bracket-cols { display: flex; gap: 0; z-index: 2; padding: 20px 16px; align-items: stretch; justify-content: center; min-width: 100%; min-height: calc(100vh - 120px); }
 
-/* Nút full màn hình bracket */
-#bracket-fullscreen-btn {
-  position: absolute; top: 10px; right: 10px; z-index: 50;
-  width: 32px; height: 32px; border-radius: 7px;
-  background: rgba(0,0,0,0.5); border: 1px solid var(--border);
-  color: var(--text); font-size: 14px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  backdrop-filter: blur(8px); transition: all 0.15s;
-}
-#bracket-fullscreen-btn:hover { background: rgba(240,165,0,0.2); border-color: var(--accent); }
-
-/* Bracket fullscreen overlay */
-body.bracket-fullscreen .center {
-  position: fixed; inset: 0; z-index: 2000;
-  width: 100vw; height: 100vh;
-  padding: 8px; overflow: auto;
-  background: var(--bg);
-}
-body.bracket-fullscreen #bracket-fullscreen-btn { top: 10px; right: 10px; }
-body.bracket-fullscreen .main > :not(.center) { display: none !important; }
-body.bracket-fullscreen .theme-strip,
-body.bracket-fullscreen .tourney-bar { display: none !important; }
-
 /* SYMMETRICAL BRACKET */
 .bracket-side { display: flex; gap: 0; align-items: stretch; }
 .bracket-side.left-side { flex-direction: row; }
@@ -675,124 +651,357 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 .m-tab:active { background: rgba(255,255,255,0.05); }
 
 @media (max-width: 768px) {
-  /* Body scrollable, tab bar ở dưới */
-  body { overflow: auto; height: auto; min-height: 100dvh; }
+  body { overflow: auto; height: auto; min-height: 100vh; }
+
   .mobile-tabs { display: flex; }
 
   .main {
     flex-direction: column;
     padding-bottom: 54px;
-    overflow: visible;
-    height: auto;
   }
 
-  /* === TAB: CƠ THỦ (left) === */
   .left {
     flex: none; width: 100%; min-width: unset; max-width: unset;
     border-right: none; border-bottom: 1px solid var(--border);
-    overflow-y: visible; max-height: none;
-    display: none; /* bị ẩn mặc định, switchTab mở */
+    max-height: unset; overflow-y: visible;
   }
 
-  /* Wheel nhỏ hơn để thấy danh sách cơ thủ phía dưới */
-  .wheel-wrap {
-    width: 55% !important;
-    margin: 0 auto;
-  }
-
-  /* Header banner compact hơn */
-  .header-banner { max-height: 70px; }
-  .hb-video { min-height: 60px; max-height: 70px; }
-
-  /* Player list: grid 3 cột nhỏ trên mobile */
-  .plist-left {
-    grid-template-columns: 1fr 1fr 1fr;
-    max-height: 45vh;
-    overflow-y: auto;
-  }
-
-  /* === TAB: BRACKET (center) === */
   .center {
-    flex: none; width: 100%;
-    display: none; /* bị ẩn mặc định */
-    overflow: auto;
-    padding: 6px 6px 8px 6px;
-    /* Cho phép scroll ngang để xem toàn bộ bracket */
-    -webkit-overflow-scrolling: touch;
+    flex: none; width: 100%; min-height: 70vh;
+    overflow-x: auto; padding: 8px;
   }
 
-  /* Bracket tối thiểu đủ rộng để hiện toàn bộ */
-  .bracket-cols {
-    min-width: max-content;
-    min-height: calc(100dvh - 160px);
-    padding: 12px 8px;
-  }
-
-  /* === TAB: THÔNG TIN (right) === */
   .right {
-    display: none !important;
+    display: flex !important;
     flex: none; width: 100%; border-left: none;
     border-top: 1px solid var(--border);
   }
 
+  /* Ẩn left và right ban đầu, chỉ show center */
+  .left  { display: none; }
+  .right { display: none !important; }
+
   /* Tourney bar compact */
   .tourney-bar { flex-wrap: wrap; height: auto; min-height: 38px; overflow: visible; }
 
-  /* Theme strip */
+  /* Theme strip: ẩn bớt dots trên mobile, giữ actions */
   .theme-strip .label { display: none; }
 
-  /* Player cards */
-  .pn { font-size: 10px !important; }
-  .pu { font-size: 8px !important; }
+  /* Player cards: tăng font size tối thiểu */
+  .pn { font-size: 11px !important; }
+  .pu { font-size: 9px !important; }
 
-  /* Spin button */
-  .spin-btn { width: 52px !important; height: 52px !important; font-size: 11px !important; }
+  /* Spin button lớn hơn để dễ tap */
+  .spin-btn { width: 64px !important; height: 64px !important; font-size: 13px !important; }
 
-  /* Modal full width */
-  .modal-c { min-width: unset; width: calc(100vw - 24px); max-width: unset; }
+  /* Modal full width trên mobile */
+  .modal-c { min-width: unset; width: calc(100vw - 32px); max-width: unset; }
 
-  /* Gear buttons */
+  /* Bracket: cho phép scroll ngang */
+  .bracket-cols { min-width: max-content; }
+
+  /* Tăng touch target các nút nhỏ */
   .gear-btn { width: 34px; height: 34px; }
   .t-dot { width: 22px; height: 22px; }
-
-  /* Nút fullscreen bracket to hơn trên mobile */
-  #bracket-fullscreen-btn { width: 38px; height: 38px; font-size: 16px; }
 }
 
-/* --- SWITCH TAB VIA BODY CLASS --- */
 @media (max-width: 768px) {
+  /* Khi tab left active */
   body.tab-left .left   { display: flex !important; }
   body.tab-left .center { display: none !important; }
   body.tab-left .right  { display: none !important; }
 
+  /* Khi tab center active */
   body.tab-center .left   { display: none !important; }
   body.tab-center .center { display: flex !important; }
   body.tab-center .right  { display: none !important; }
 
+  /* Khi tab right active */
   body.tab-right .left   { display: none !important; }
   body.tab-right .center { display: none !important; }
   body.tab-right .right  { display: flex !important; }
 }
 
-/* === BRACKET FULLSCREEN trên mobile === */
+/* ============ BRACKET TABS (Bracket / Lịch Thi Đấu) ============ */
+.bracket-tab-bar {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: 8px 12px 0;
+  gap: 4px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.bracket-tab-bar.visible {
+  display: flex;
+  pointer-events: all;
+}
+.btab {
+  padding: 5px 14px 6px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  opacity: 0.5;
+  text-transform: uppercase;
+}
+.btab:hover { opacity: 0.8; background: rgba(255,255,255,0.06); }
+.btab.active {
+  opacity: 1;
+  background: var(--card);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 -2px 10px rgba(240,165,0,0.15);
+}
+
+/* Schedule panel */
+#schedule-panel {
+  display: none;
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 48px 16px 16px;
+  background: radial-gradient(ellipse at center, rgba(240,165,0,0.02) 0%, transparent 70%);
+}
+#schedule-panel.active { display: block; }
+
+/* When schedule is active, hide bracket */
+.center.schedule-active #bracket-container { display: none; }
+.center.schedule-active .bracket-tab-bar { background: transparent; }
+
+/* Schedule layout */
+.schedule-columns {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.schedule-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 14px;
+  position: relative;
+}
+/* Divider line between columns */
+.schedule-divider {
+  width: 2px;
+  align-self: stretch;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--accent) 20%,
+    var(--accent) 80%,
+    transparent
+  );
+  opacity: 0.25;
+  position: relative;
+  flex-shrink: 0;
+  animation: dividerPulse 3s ease-in-out infinite;
+}
+.schedule-divider::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -1px; right: -1px; bottom: 0;
+  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+  opacity: 0.4;
+  filter: blur(4px);
+  animation: dividerGlow 3s ease-in-out infinite;
+}
+@keyframes dividerPulse {
+  0%,100% { opacity: 0.2; }
+  50% { opacity: 0.45; }
+}
+@keyframes dividerGlow {
+  0%,100% { opacity: 0.2; }
+  50% { opacity: 0.6; }
+}
+
+/* Match card */
+.sched-match {
+  display: flex;
+  align-items: stretch;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s;
+  animation: schedMatchIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.sched-match:hover {
+  border-color: rgba(240,165,0,0.35);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(240,165,0,0.1);
+  transform: translateY(-1px);
+}
+@keyframes schedMatchIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Match number badge */
+.sched-match-num {
+  position: absolute;
+  top: 4px; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 800;
+  opacity: 0.3;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Player sides */
+.sched-player {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 12px 10px;
+  min-width: 0;
+  position: relative;
+}
+.sched-player.left { align-items: flex-start; border-right: 1px solid var(--border); }
+.sched-player.right { align-items: flex-end; }
+
+/* Colored accent bar */
+.sched-player.left::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0; width: 3px;
+  background: #3b82f6;
+  opacity: 0.8;
+}
+.sched-player.right::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0; width: 3px;
+  background: #ef4444;
+  opacity: 0.8;
+}
+
+.sched-silhouette {
+  width: 28px; height: 28px; opacity: 0.12; flex-shrink: 0; margin-bottom: 4px;
+}
+.sched-player.left .sched-silhouette { transform: scaleX(1); }
+.sched-player.right .sched-silhouette { transform: scaleX(-1); }
+
+.sched-name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--name-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+.sched-unit {
+  font-size: 9.5px;
+  color: var(--unit-color);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: 2px;
+}
+.sched-rank {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 800;
+  background: var(--rank-color);
+  color: #000;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-top: 3px;
+}
+
+/* VS center */
+.sched-vs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 10px;
+  flex-shrink: 0;
+  gap: 3px;
+}
+.sched-vs-txt {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: 0.9;
+}
+.sched-vs-dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent); opacity: 0.4;
+  animation: vsDotPulse 1.5s ease-in-out infinite;
+}
+@keyframes vsDotPulse {
+  0%,100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.5); opacity: 0.7; }
+}
+
+/* Empty slot */
+.sched-name.empty {
+  color: rgba(255,255,255,0.2);
+  font-style: italic;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* Schedule header */
+.schedule-header {
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.schedule-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.schedule-subtitle {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  opacity: 0.35;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
 @media (max-width: 768px) {
-  body.bracket-fullscreen {
-    overflow: hidden;
-  }
-  body.bracket-fullscreen .center {
-    position: fixed; inset: 0; z-index: 2000;
-    width: 100vw; height: 100dvh;
-    display: flex !important;
-    padding: 6px; overflow: auto;
-    background: var(--bg);
-    /* Landscape: cho phép xoay ngang tự nhiên */
-  }
-  body.bracket-fullscreen .mobile-tabs { display: none !important; }
-  body.bracket-fullscreen .main > .left,
-  body.bracket-fullscreen .main > .right { display: none !important; }
-  body.bracket-fullscreen .theme-strip,
-  body.bracket-fullscreen .tourney-bar { display: none !important; }
-  body.bracket-fullscreen #bracket-fullscreen-btn { top: 8px; right: 8px; }
+  .schedule-columns { flex-direction: column; gap: 8px; }
+  .schedule-divider { display: none; }
+  .sched-name { font-size: 12px; }
 }
 </style>
 </head>
@@ -907,10 +1116,24 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 
   <!-- CENTER: BRACKET -->
   <section class="center" id="center-panel">
-    <button id="bracket-fullscreen-btn" onclick="toggleBracketFullscreen()" title="Toàn màn hình bracket">⛶</button>
+    <!-- Tab bar (chỉ hiện sau bốc thăm) -->
+    <div class="bracket-tab-bar" id="bracket-tab-bar">
+      <button class="btab active" id="btab-bracket" onclick="switchBracketTab('bracket')">🎯 Bracket</button>
+      <button class="btab" id="btab-schedule" onclick="switchBracketTab('schedule')">⚔️ Lịch Thi Đấu</button>
+    </div>
+
     <div class="bracket-wrap" id="bracket-container">
       <svg id="bracket-lines"></svg>
       <div class="bracket-cols" id="bracket-columns"></div>
+    </div>
+
+    <!-- Schedule Panel -->
+    <div id="schedule-panel">
+      <div class="schedule-header">
+        <div class="schedule-title">⚔️ Lịch Thi Đấu</div>
+        <div class="schedule-subtitle" id="schedule-subtitle">Vòng 1 · Round of Draw</div>
+      </div>
+      <div class="schedule-columns" id="schedule-columns"></div>
     </div>
   </section>
 
@@ -1604,17 +1827,13 @@ async function init() {
   setSyncProgress(100);
   loadTxt.textContent = 'SẴN SÀNG';
 
-  // Apply admin mode — KHÔNG lấy từ S (đã bị reset khi save), luôn false
-  setAdminMode(false);
+  // Apply admin mode nếu đã lưu
+  setAdminMode(S.isAdmin || false);
 
   setTimeout(() => {
     document.getElementById('loading-screen').classList.add('hidden');
     setSyncProgress(0);
-    // Cảnh báo nếu chưa có Supabase (thiết bị mới, không có dữ liệu cloud)
-    if (!S.supaUrl || !S.supaKey) {
-      showToast('⚠️ Chưa có Cloud Sync — Dữ liệu chỉ lưu local. Vào Settings → ☁️ để cài Supabase.', 'error');
-    }
-  }, 600);
+  }, 400);
 
   window.addEventListener('resize', () => { drawBracketLines(); });
   setTimeout(drawBracketLines, 300);
@@ -2203,6 +2422,7 @@ function renderBracket() {
     // Only final — show linearly
     container.appendChild(makeFinalCol(0));
     setTimeout(drawBracketLines, 80);
+    checkBracketTabVisibility();
     return;
   }
 
@@ -2264,6 +2484,7 @@ function renderBracket() {
   container.appendChild(rightSide);
 
   setTimeout(drawBracketLines, 80);
+  checkBracketTabVisibility();
 }
 
 // Make a column for half of a round (left or right half of matches)
@@ -2548,6 +2769,7 @@ function updateBracketSize() {
   S.players.forEach(p => p.drawn = false);
   saveState();
   renderAll();
+  checkBracketTabVisibility();
   closeModal('count-modal');
   showToast(`🔢 Bracket: ${sz} người`, 'info');
 }
@@ -2622,14 +2844,139 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ================================================================
-   BRACKET FULLSCREEN
+   BRACKET TAB — Bracket / Lịch Thi Đấu
    ================================================================ */
-function toggleBracketFullscreen() {
-  const isFs = document.body.classList.toggle('bracket-fullscreen');
-  const btn = document.getElementById('bracket-fullscreen-btn');
-  btn.textContent = isFs ? '✕' : '⛶';
-  btn.title = isFs ? 'Thoát toàn màn hình' : 'Toàn màn hình bracket';
-  setTimeout(drawBracketLines, 120);
+function switchBracketTab(tab) {
+  const bracketContainer = document.getElementById('bracket-container');
+  const schedulePanel = document.getElementById('schedule-panel');
+  const centerPanel = document.getElementById('center-panel');
+  const btabBracket = document.getElementById('btab-bracket');
+  const btabSchedule = document.getElementById('btab-schedule');
+
+  if (tab === 'bracket') {
+    bracketContainer.style.display = '';
+    schedulePanel.classList.remove('active');
+    centerPanel.classList.remove('schedule-active');
+    btabBracket.classList.add('active');
+    btabSchedule.classList.remove('active');
+    setTimeout(drawBracketLines, 80);
+  } else {
+    bracketContainer.style.display = 'none';
+    schedulePanel.classList.add('active');
+    centerPanel.classList.add('schedule-active');
+    btabBracket.classList.remove('active');
+    btabSchedule.classList.add('active');
+    renderSchedule();
+  }
+}
+
+function checkBracketTabVisibility() {
+  // Hiện tab bar khi đã có ít nhất 1 player được bốc vào bracket
+  const tabBar = document.getElementById('bracket-tab-bar');
+  if (!tabBar) return;
+  const r0 = S.bracket && S.bracket[0];
+  const hasDrawn = r0 && r0.some(m => m.p1 || m.p2);
+  if (hasDrawn) {
+    tabBar.classList.add('visible');
+  } else {
+    tabBar.classList.remove('visible');
+    // Nếu tab schedule đang active → quay về bracket
+    const schedulePanel = document.getElementById('schedule-panel');
+    if (schedulePanel && schedulePanel.classList.contains('active')) {
+      switchBracketTab('bracket');
+    }
+  }
+}
+
+function renderSchedule() {
+  const container = document.getElementById('schedule-columns');
+  const subtitle = document.getElementById('schedule-subtitle');
+  if (!container) return;
+  container.innerHTML = '';
+
+  // Lấy tất cả matches ở vòng 1 (bracket[0])
+  const r0 = S.bracket && S.bracket[0];
+  if (!r0 || r0.length === 0) {
+    container.innerHTML = '<div style="text-align:center;opacity:0.3;font-family:var(--font-mono);font-size:11px;padding:40px;">Chưa có dữ liệu bốc thăm</div>';
+    return;
+  }
+
+  const totalMatches = r0.length;
+  const half = Math.ceil(totalMatches / 2);
+
+  // Update subtitle
+  subtitle.textContent = `Vòng 1 · ${totalMatches} trận · ${totalMatches * 2} cơ thủ`;
+
+  // Build match cards
+  const leftMatches = r0.slice(0, half);
+  const rightMatches = r0.slice(half);
+
+  // Silhouette SVG (inline, compact billiards player)
+  function silhouetteSVG() {
+    return `<svg class="sched-silhouette" viewBox="0 0 40 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="20" cy="7" rx="5" ry="5" fill="currentColor"/>
+      <path d="M14 14 Q10 22 10 30 L14 30 L14 22 L26 22 L26 30 L30 30 Q30 22 26 14 Z" fill="currentColor"/>
+      <path d="M14 30 L12 48 L17 48 L20 36 L23 48 L28 48 L26 30 Z" fill="currentColor"/>
+      <line x1="10" y1="28" x2="2" y2="38" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>`;
+  }
+
+  function makeMatchCard(m, globalIndex) {
+    const matchNum = globalIndex + 1;
+    const p1 = m.p1, p2 = m.p2;
+
+    const hasP1 = !!p1, hasP2 = !!p2;
+    const animDelay = (globalIndex % half) * 40;
+
+    return `
+      <div class="sched-match" style="animation-delay:${animDelay}ms">
+        <div class="sched-match-num">MATCH ${matchNum}</div>
+        <!-- Player 1 (left) -->
+        <div class="sched-player left">
+          ${silhouetteSVG()}
+          <div class="sched-name${hasP1 ? '' : ' empty'}">${hasP1 ? p1.name : 'TBD'}</div>
+          ${hasP1 && p1.unit ? `<div class="sched-unit">${p1.unit}</div>` : ''}
+          ${hasP1 && p1.rank ? `<div class="sched-rank">${p1.rank}</div>` : ''}
+        </div>
+        <!-- VS -->
+        <div class="sched-vs">
+          <div class="sched-vs-dot"></div>
+          <div class="sched-vs-txt">VS</div>
+          <div class="sched-vs-dot"></div>
+        </div>
+        <!-- Player 2 (right) -->
+        <div class="sched-player right">
+          ${silhouetteSVG()}
+          <div class="sched-name${hasP2 ? '' : ' empty'}">${hasP2 ? p2.name : 'TBD'}</div>
+          ${hasP2 && p2.unit ? `<div class="sched-unit">${p2.unit}</div>` : ''}
+          ${hasP2 && p2.rank ? `<div class="sched-rank">${p2.rank}</div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  // Left column
+  const leftCol = document.createElement('div');
+  leftCol.className = 'schedule-col';
+  leftMatches.forEach((m, i) => {
+    leftCol.insertAdjacentHTML('beforeend', makeMatchCard(m, i));
+  });
+
+  container.appendChild(leftCol);
+
+  // Divider (only if 2 columns)
+  if (rightMatches.length > 0) {
+    const divider = document.createElement('div');
+    divider.className = 'schedule-divider';
+    container.appendChild(divider);
+
+    // Right column
+    const rightCol = document.createElement('div');
+    rightCol.className = 'schedule-col';
+    rightMatches.forEach((m, i) => {
+      rightCol.insertAdjacentHTML('beforeend', makeMatchCard(m, half + i));
+    });
+    container.appendChild(rightCol);
+  }
 }
 
 /* ================================================================
