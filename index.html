@@ -477,69 +477,255 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 .ot-row .ot-unit { color: var(--unit-color); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ot-row .ot-rank { font-size: 8px; text-align: center; color: var(--rank-color); font-weight: 800; font-family: var(--font-mono); }
 
-/* ============ SPIN RESULT POPUP ============ */
+/* ============ SPIN RESULT POPUP (bốc thăm) ============ */
 #spin-popup {
   display: none; position: fixed; z-index: 7000;
   pointer-events: none;
 }
 #spin-popup.show { display: block; pointer-events: all; }
 .spin-popup-box {
-  background: rgba(13,17,23,0.92);
-  border: 1px solid rgba(240,165,0,0.4);
-  border-radius: 14px; padding: 12px 18px; text-align: center;
-  width: 220px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05), 0 0 30px rgba(240,165,0,0.15);
+  background: rgba(13,17,23,0.96);
+  border: 1px solid rgba(240,165,0,0.45);
+  border-radius: 16px; padding: 16px 20px; text-align: center;
+  width: 240px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.8), 0 0 40px rgba(240,165,0,0.12);
   animation: spinPopupIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
   position: relative; overflow: hidden;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
 }
 .spin-popup-box::before {
   content: ''; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 0%, rgba(240,165,0,0.1) 0%, transparent 60%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(240,165,0,0.12) 0%, transparent 65%);
 }
 @keyframes spinPopupIn {
-  from { opacity:0; transform: scale(0.7) translateY(10px); }
+  from { opacity:0; transform: scale(0.72) translateY(12px); }
   to { opacity:1; transform: scale(1) translateY(0); }
 }
-.spin-popup-confetti {
-  font-size: 22px; animation: confettiBounce 0.6s ease-in-out infinite alternate; display: block;
-}
-@keyframes confettiBounce { from { transform: scale(1); } to { transform: scale(1.15); } }
+.spin-popup-confetti { font-size: 26px; animation: confettiBounce 0.7s ease-in-out infinite alternate; display: block; }
+@keyframes confettiBounce { from { transform: scale(1) rotate(-6deg); } to { transform: scale(1.18) rotate(6deg); } }
 .spin-popup-label {
   font-family: var(--font-mono); font-size: 8px; font-weight: 700;
-  opacity: 0.4; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px;
+  opacity: 0.4; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px;
 }
 .spin-popup-name {
-  font-family: var(--font-display); font-size: 22px; font-weight: 900;
-  color: var(--accent); margin: 3px 0 1px;
-  text-shadow: 0 0 20px rgba(240,165,0,0.5);
+  font-family: var(--font-display); font-size: 26px; font-weight: 900;
+  color: var(--accent); margin: 4px 0 2px;
   letter-spacing: -0.5px; line-height: 1.1;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  animation: nameGlow 2s ease-in-out infinite;
 }
-.spin-popup-unit {
-  font-size: 10px; color: var(--unit-color); font-style: italic;
+@keyframes nameGlow {
+  0%,100% { text-shadow: 0 0 12px rgba(240,165,0,0.4); }
+  50%      { text-shadow: 0 0 28px rgba(240,165,0,0.8), 0 0 60px rgba(240,165,0,0.2); }
 }
+.spin-popup-unit { font-size: 11px; color: var(--unit-color); font-style: italic; }
 .spin-popup-rank {
-  display: inline-block; font-size: 9px; background: var(--rank-color);
-  color: #000; padding: 1px 6px; border-radius: 3px; font-weight: 800;
-  font-family: var(--font-mono); margin-top: 3px;
+  display: inline-block; font-size: 10px; background: var(--rank-color);
+  color: #000; padding: 2px 8px; border-radius: 4px; font-weight: 800;
+  font-family: var(--font-mono); margin-top: 4px;
 }
 .spin-popup-actions {
-  display: flex; gap: 6px; margin-top: 10px; justify-content: center;
+  display: flex; gap: 8px; margin-top: 14px; justify-content: center;
 }
 .spin-popup-actions button {
-  padding: 6px 12px; border-radius: 7px; font-weight: 700; font-family: inherit;
-  font-size: 11px; cursor: pointer; transition: all 0.15s;
+  padding: 7px 14px; border-radius: 8px; font-weight: 700; font-family: inherit;
+  font-size: 12px; cursor: pointer; transition: all 0.15s;
   border: 1px solid var(--border);
 }
-.spin-popup-actions .btn-close { background: rgba(255,255,255,0.06); color: var(--text); }
+.spin-popup-actions .btn-close {
+  background: rgba(255,255,255,0.06); color: var(--text);
+}
 .spin-popup-actions .btn-close:hover { background: rgba(255,255,255,0.12); }
 .spin-popup-actions .btn-continue {
-  background: linear-gradient(135deg, rgba(240,165,0,0.2), rgba(224,90,43,0.2));
+  background: linear-gradient(135deg, rgba(240,165,0,0.25), rgba(224,90,43,0.25));
   border-color: var(--accent); color: var(--accent);
 }
 .spin-popup-actions .btn-continue:hover {
-  background: linear-gradient(135deg, rgba(240,165,0,0.35), rgba(224,90,43,0.35));
+  background: linear-gradient(135deg, rgba(240,165,0,0.45), rgba(224,90,43,0.45));
+  transform: translateY(-1px);
+}
+
+/* ============ WINNER POPUP (xác định người thắng) ============ */
+#winner-popup {
+  display: none; position: fixed; inset: 0; z-index: 8500;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,0);
+  transition: background 0.35s ease;
+  pointer-events: none;
+}
+#winner-popup.show {
+  display: flex; pointer-events: all;
+  background: rgba(0,0,0,0.75);
+}
+#winner-popup .wp-backdrop {
+  position: absolute; inset: 0;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.wp-box {
+  position: relative; z-index: 1;
+  background: linear-gradient(160deg, #111820, #0d1117);
+  border: 1px solid rgba(240,165,0,0.35);
+  border-radius: 22px;
+  padding: 0;
+  width: min(480px, 92vw);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 32px 80px rgba(0,0,0,0.8),
+    0 0 80px rgba(240,165,0,0.1);
+  animation: wpIn 0.5s cubic-bezier(0.22,1,0.36,1);
+  transform-origin: center bottom;
+}
+@keyframes wpIn {
+  from { opacity:0; transform: scale(0.82) translateY(28px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.wp-canvas {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0; border-radius: 22px; overflow: hidden;
+}
+.wp-canvas canvas { display: block; width: 100%; height: 100%; }
+.wp-accent-bar {
+  height: 4px;
+  background: linear-gradient(90deg, #f0a500, #e05a2b, #f0a500);
+  background-size: 200% 100%;
+  animation: barShift 2s linear infinite;
+}
+@keyframes barShift { to { background-position: -200% 0; } }
+.wp-content {
+  position: relative; z-index: 2;
+  padding: 28px 32px 32px;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.wp-img-wrap {
+  width: 110px; height: 110px;
+  position: relative; margin-bottom: 4px;
+}
+.wp-img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  animation: wpImgFloat 3s ease-in-out infinite;
+  filter: drop-shadow(0 8px 24px rgba(240,165,0,0.5));
+}
+.wp-img-placeholder {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(240,165,0,0.15), rgba(224,90,43,0.1));
+  border: 2px solid rgba(240,165,0,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 56px;
+  animation: wpImgFloat 3s ease-in-out infinite;
+}
+@keyframes wpImgFloat {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-6px) scale(1.04); }
+}
+.wp-img-wrap::after {
+  content: '';
+  position: absolute; inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240,165,0,0.18) 0%, transparent 70%);
+  animation: ringPulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ringPulse {
+  0%,100% { transform: scale(0.9); opacity: 0.6; }
+  50%      { transform: scale(1.1); opacity: 1; }
+}
+.wp-round-label {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--accent); opacity: 0.6;
+  background: rgba(240,165,0,0.08);
+  padding: 3px 12px; border-radius: 20px;
+  border: 1px solid rgba(240,165,0,0.15);
+}
+.wp-headline {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase; opacity: 0.45;
+}
+.wp-name {
+  font-family: var(--font-display); font-size: clamp(28px, 6vw, 46px);
+  font-weight: 900; letter-spacing: -0.5px; line-height: 1.05;
+  color: var(--text);
+  background: linear-gradient(135deg, #fff 40%, var(--accent));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: nameReveal 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay: 0.2s;
+}
+@keyframes nameReveal {
+  from { opacity:0; transform: translateY(10px) scale(0.92); }
+  to   { opacity:1; transform: none; }
+}
+.wp-unit {
+  font-size: 13px; color: var(--unit-color); font-style: italic;
+  animation: nameReveal 0.5s ease both; animation-delay: 0.35s;
+}
+.wp-rank-badge {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 800;
+  background: var(--accent); color: #000;
+  padding: 3px 12px; border-radius: 6px;
+  animation: nameReveal 0.5s ease both; animation-delay: 0.45s;
+}
+.wp-score {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 20px; border-radius: 12px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  margin-top: 4px;
+  animation: nameReveal 0.5s ease both; animation-delay: 0.5s;
+}
+.wp-score-side { text-align: center; }
+.wp-score-name { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+.wp-score-val {
+  font-family: var(--font-display); font-size: 32px; font-weight: 900;
+  letter-spacing: -1px; line-height: 1;
+}
+.wp-score-val.win { color: var(--accent); }
+.wp-score-val.lose { color: var(--muted); opacity: 0.5; }
+.wp-score-sep {
+  font-family: var(--font-mono); font-size: 11px; opacity: 0.3;
+  font-weight: 700; letter-spacing: 1px; padding: 0 4px;
+}
+.wp-actions {
+  display: flex; gap: 10px; margin-top: 10px;
+  animation: nameReveal 0.5s ease both; animation-delay: 0.55s;
+}
+.wp-btn {
+  padding: 10px 22px; border-radius: 10px; font-weight: 700;
+  font-family: var(--font-main); font-size: 13px; cursor: pointer;
+  transition: all 0.15s; border: none;
+}
+.wp-btn.close {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.wp-btn.close:hover { background: rgba(255,255,255,0.13); }
+
+/* ============ MATCH CLICK FEEDBACK ============ */
+@keyframes slotWin {
+  0%   { box-shadow: 0 0 0 0 rgba(240,165,0,0); background: rgba(240,165,0,0.08); }
+  30%  { box-shadow: 0 0 0 6px rgba(240,165,0,0.35); background: rgba(240,165,0,0.18); }
+  100% { box-shadow: 0 0 0 0 rgba(240,165,0,0); background: rgba(240,165,0,0.08); }
+}
+.mp.winner-flash { animation: slotWin 0.55s ease forwards; }
+@keyframes slotLose {
+  from { opacity:1; }
+  to   { opacity:0.35; filter: grayscale(60%); }
+}
+.mp.loser-dim { animation: slotLose 0.4s ease forwards; opacity:0.35; filter: grayscale(60%); }
+.mb.has-winner {
+  border-color: rgba(240,165,0,0.5) !important;
+  box-shadow: 0 0 20px rgba(240,165,0,0.15) !important;
+}
+.champ-reveal {
+  animation: champIn 0.8s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes champIn {
+  from { opacity:0; transform: scale(0.7); }
+  to   { opacity:1; transform: scale(1); }
 }
 
 /* ============ FLYING ANIMATION ============ */
@@ -1080,14 +1266,47 @@ body.viewer-mode .ms { pointer-events: none; opacity: 0.6; }
 <!-- SPIN RESULT POPUP -->
 <div id="spin-popup">
   <div class="spin-popup-box">
-    <div class="spin-popup-confetti" id="popup-emoji">🎉</div>
-    <div class="spin-popup-label">Chúc mừng</div>
+    <span class="spin-popup-confetti" id="popup-emoji">🎉</span>
+    <div class="spin-popup-label">Đã bốc được</div>
     <div class="spin-popup-name" id="popup-name">—</div>
     <div class="spin-popup-unit" id="popup-unit"></div>
     <div id="popup-rank-wrap"></div>
     <div class="spin-popup-actions">
-      <button class="btn-close" onclick="closeSpinPopup()">Đóng</button>
+      <button class="btn-close" onclick="closeSpinPopup()">Vào bracket</button>
       <button class="btn-continue" onclick="closeSpinPopupAndSpin()">🎯 Quay tiếp</button>
+    </div>
+  </div>
+</div>
+
+<!-- WINNER POPUP -->
+<div id="winner-popup">
+  <div class="wp-backdrop" onclick="closeWinnerPopup()"></div>
+  <div class="wp-box">
+    <div class="wp-accent-bar"></div>
+    <div class="wp-canvas"><canvas id="wp-particle-canvas"></canvas></div>
+    <div class="wp-content">
+      <div class="wp-img-wrap" id="wp-img-wrap">
+        <div class="wp-img-placeholder" id="wp-img-placeholder">🏆</div>
+      </div>
+      <div class="wp-round-label" id="wp-round-label">Trận đấu</div>
+      <div class="wp-headline">Người chiến thắng</div>
+      <div class="wp-name" id="wp-name">—</div>
+      <div class="wp-unit" id="wp-unit"></div>
+      <div id="wp-rank-wrap"></div>
+      <div class="wp-score" id="wp-score" style="display:none">
+        <div class="wp-score-side">
+          <div class="wp-score-name" id="wp-s1-name">—</div>
+          <div class="wp-score-val win" id="wp-s1-val">—</div>
+        </div>
+        <div class="wp-score-sep">VS</div>
+        <div class="wp-score-side">
+          <div class="wp-score-name" id="wp-s2-name">—</div>
+          <div class="wp-score-val lose" id="wp-s2-val">—</div>
+        </div>
+      </div>
+      <div class="wp-actions">
+        <button class="wp-btn close" onclick="closeWinnerPopup()">Đóng</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2285,22 +2504,18 @@ function showSpinPopup(player) {
   document.getElementById('popup-name').textContent = player.name;
   document.getElementById('popup-unit').textContent = player.unit || '';
   const rankWrap = document.getElementById('popup-rank-wrap');
-  rankWrap.innerHTML = player.rank ? `<span class="spin-popup-rank">${player.rank}</span>` : '';
+  rankWrap.innerHTML = player.rank
+    ? `<span class="spin-popup-rank">${player.rank}</span>` : '';
 
-  // Random emoji chúc mừng
-  const emojis = ['🎉','🎊','🏆','🎯','⭐','🔥','💥','🎱'];
+  const emojis = ['🎉','🎊','🎯','⭐','🔥','💥','🎱','✨'];
   document.getElementById('popup-emoji').textContent = emojis[Math.floor(Math.random() * emojis.length)];
 
-  // Position popup centered over the wheel canvas
   const canvas = document.getElementById('wheel-canvas');
-  const rect = canvas.getBoundingClientRect();
-  const popup = document.getElementById('spin-popup');
-  const box = popup.querySelector('.spin-popup-box');
-  const boxW = 220;
-
-  popup.style.left = (rect.left + rect.width/2 - boxW/2) + 'px';
-  popup.style.top  = (rect.top  + rect.height/2 - 90) + 'px';
-
+  const rect   = canvas.getBoundingClientRect();
+  const popup  = document.getElementById('spin-popup');
+  const boxW   = 240;
+  popup.style.left = (rect.left + rect.width / 2 - boxW / 2) + 'px';
+  popup.style.top  = (rect.top  + rect.height / 2 - 100) + 'px';
   popup.classList.add('show');
 }
 
@@ -2589,6 +2804,7 @@ function makeFinalCol(r) {
   if (m.winner) {
     const champDiv = document.createElement('div');
     champDiv.style.cssText = 'padding:8px;text-align:center;border-top:1px solid rgba(255,255,255,0.1);';
+    champDiv.className = 'champ-reveal';
     champDiv.innerHTML = `
       <div style="font-family:var(--font-display);font-size:10px;letter-spacing:1.5px;opacity:0.4;margin-bottom:2px;text-transform:uppercase;">Vô Địch</div>
       <div style="font-family:var(--font-display);font-size:20px;font-weight:900;color:var(--accent);text-shadow:0 0 20px var(--accent);">🏆 ${m.winner.name}</div>
@@ -2688,23 +2904,33 @@ function updateScore(r, mi, pk, e) {
 function setWinner(r, mi, pk) {
   if (!S.isAdmin) return;
   pushHistory();
-  const m = S.bracket[r][mi];
-  const w = pk === 'p1' ? m.p1 : m.p2;
+  const m  = S.bracket[r][mi];
+  const w  = pk === 'p1' ? m.p1 : m.p2;
   if (!w) return;
-  m.winner = w;
-  const nr = r + 1, nm = Math.floor(mi / 2);
-  if (nr < S.bracket.length) {
-    const np = mi % 2 === 0 ? 'p1' : 'p2';
-    S.bracket[nr][nm][np] = w;
-    S.bracket[nr][nm].winner = null;
-  }
-  renderBracket();
-  // Auto-update schedule if it's currently active
-  const schedPanel = document.getElementById('schedule-panel');
-  if (schedPanel && schedPanel.classList.contains('active')) {
-    renderSchedule();
-  }
-  saveState(); supaPushDebounced();
+
+  // Visual flash feedback TRƯỚC KHI re-render
+  const winEl  = document.getElementById(`match-${r}-${mi}-${pk}`);
+  const loseEl = document.getElementById(`match-${r}-${mi}-${pk === 'p1' ? 'p2' : 'p1'}`);
+  if (winEl)  { winEl.classList.remove('winner-flash'); void winEl.offsetWidth; winEl.classList.add('winner-flash'); }
+  if (loseEl) { loseEl.classList.add('loser-dim'); }
+
+  setTimeout(() => {
+    m.winner = w;
+    const nr = r + 1, nm = Math.floor(mi / 2);
+    if (nr < S.bracket.length) {
+      const np = mi % 2 === 0 ? 'p1' : 'p2';
+      S.bracket[nr][nm][np] = w;
+      S.bracket[nr][nm].winner = null;
+    }
+    renderBracket();
+    const schedPanel = document.getElementById('schedule-panel');
+    if (schedPanel && schedPanel.classList.contains('active')) renderSchedule();
+    saveState(); supaPushDebounced();
+
+    // Hiện winner popup
+    const isFinal = (r === S.bracket.length - 1);
+    showWinnerPopup(w, m, r, mi, isFinal);
+  }, 220);
 }
 
 /* ================================================================
@@ -3080,6 +3306,134 @@ function renderSchedule() {
 /* ================================================================
    SWITCH TAB — Mobile navigation
    ================================================================ */
+/* ================================================================
+   WINNER POPUP
+   ================================================================ */
+const WIN_IMAGE_URL = ''; // Đặt URL ảnh PNG vào đây, hoặc để '' dùng emoji
+
+function showWinnerPopup(winner, match, roundIdx, matchIdx, isFinal) {
+  const totalRounds = S.bracket.length;
+  const roundLabel  = isFinal
+    ? '🏆 CHUNG KẾT — VÔ ĐỊCH!'
+    : getRoundName(roundIdx, totalRounds).toUpperCase();
+
+  const imgWrap = document.getElementById('wp-img-wrap');
+  if (WIN_IMAGE_URL) {
+    imgWrap.innerHTML = `<img class="wp-img" id="wp-img" src="${WIN_IMAGE_URL}" alt="winner">`;
+  } else {
+    imgWrap.innerHTML = `<div class="wp-img-placeholder" id="wp-img-placeholder">${isFinal ? '👑' : '🏆'}</div>`;
+  }
+
+  document.getElementById('wp-round-label').textContent = roundLabel;
+  document.getElementById('wp-name').textContent        = winner.name;
+  document.getElementById('wp-unit').textContent        = winner.unit || '';
+  const rankWrap = document.getElementById('wp-rank-wrap');
+  rankWrap.innerHTML = winner.rank
+    ? `<span class="wp-rank-badge">${winner.rank}</span>` : '';
+
+  const scoreBox = document.getElementById('wp-score');
+  const s1 = match.s1, s2 = match.s2;
+  if (s1 || s2) {
+    const p1IsWinner = match.p1 && winner.id === match.p1.id;
+    document.getElementById('wp-s1-name').textContent = match.p1 ? match.p1.name : '—';
+    document.getElementById('wp-s2-name').textContent = match.p2 ? match.p2.name : '—';
+    document.getElementById('wp-s1-val').textContent  = s1 || '—';
+    document.getElementById('wp-s2-val').textContent  = s2 || '—';
+    document.getElementById('wp-s1-val').className = 'wp-score-val ' + (p1IsWinner ? 'win' : 'lose');
+    document.getElementById('wp-s2-val').className = 'wp-score-val ' + (!p1IsWinner ? 'win' : 'lose');
+    scoreBox.style.display = '';
+  } else {
+    scoreBox.style.display = 'none';
+  }
+
+  const popup = document.getElementById('winner-popup');
+  popup.classList.add('show');
+  requestAnimationFrame(() => launchParticles(isFinal));
+}
+
+function closeWinnerPopup() {
+  document.getElementById('winner-popup').classList.remove('show');
+  stopParticles();
+}
+
+/* ── Particle system ── */
+let particleRAF = null;
+let particleCtx = null;
+let particles   = [];
+
+function launchParticles(intense) {
+  const canvas = document.getElementById('wp-particle-canvas');
+  if (!canvas) return;
+  const box = canvas.parentElement.parentElement;
+  canvas.width  = box.offsetWidth;
+  canvas.height = box.offsetHeight;
+  particleCtx   = canvas.getContext('2d');
+
+  const count  = intense ? 120 : 60;
+  const colors = ['#f0a500','#e05a2b','#ffffff','#ffd700','#ff6b35','#fff176'];
+  particles = Array.from({ length: count }, () => ({
+    x:    canvas.width * Math.random(),
+    y:    canvas.height * 0.3 + Math.random() * 40,
+    vx:   (Math.random() - 0.5) * 6,
+    vy:   -4 - Math.random() * 6,
+    size: 3 + Math.random() * 5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    rot:  Math.random() * Math.PI * 2,
+    rotV: (Math.random() - 0.5) * 0.3,
+    alpha: 1,
+    shape: Math.random() > 0.5 ? 'rect' : 'circle',
+    gravity: 0.18 + Math.random() * 0.12,
+    decay:   0.012 + Math.random() * 0.012,
+  }));
+
+  function tick() {
+    if (!particleCtx) return;
+    particleCtx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      if (p.alpha <= 0) return;
+      alive = true;
+      p.x += p.vx; p.y += p.vy;
+      p.vy += p.gravity;
+      p.rot += p.rotV;
+      p.alpha -= p.decay;
+      particleCtx.save();
+      particleCtx.globalAlpha = Math.max(0, p.alpha);
+      particleCtx.translate(p.x, p.y);
+      particleCtx.rotate(p.rot);
+      particleCtx.fillStyle = p.color;
+      if (p.shape === 'rect') {
+        particleCtx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      } else {
+        particleCtx.beginPath();
+        particleCtx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        particleCtx.fill();
+      }
+      particleCtx.restore();
+    });
+    if (alive) particleRAF = requestAnimationFrame(tick);
+    else stopParticles();
+  }
+  stopParticles();
+  particleRAF = requestAnimationFrame(tick);
+}
+
+function stopParticles() {
+  if (particleRAF) { cancelAnimationFrame(particleRAF); particleRAF = null; }
+  particleCtx = null;
+  particles   = [];
+  const canvas = document.getElementById('wp-particle-canvas');
+  if (canvas && canvas.getContext) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeWinnerPopup();
+    const sp = document.getElementById('spin-popup');
+    if (sp && sp.classList.contains('show')) sp.classList.remove('show');
+  }
+});
+
 function switchTab(tab) {
   document.body.classList.remove('tab-left','tab-center','tab-right');
   document.body.classList.add('tab-' + tab);
